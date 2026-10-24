@@ -1,0 +1,35 @@
+Proprietary License — All Rights Reserved
+
+Copyright (c) 2026 Strippy (https://github.com/Strippy). All rights reserved.
+
+This repository, including all source code, designs, text, graphics and other
+material in it (the "Software"), is the exclusive property of the copyright
+holder.
+
+1. No license is granted. Except as expressly stated in section 2, no right or
+   license is granted to anyone, whether by implication, estoppel or otherwise.
+   Without prior written permission from the copyright holder, you may not:
+     (a) copy, reproduce or mirror the Software, in whole or in part;
+     (b) modify, adapt, translate or create derivative works of it;
+     (c) distribute, publish, sublicense, sell, rent, lease or transfer it;
+     (d) deploy, host or run it, or any part of it, as a product or service; or
+     (e) use it, or any part of it, to train, fine-tune or evaluate machine
+         learning models, or to build a competing product.
+
+2. Viewing on GitHub. Because this repository is public on GitHub, users of
+   GitHub may view it and fork it on GitHub to the extent required by GitHub's
+   Terms of Service. That permission does not extend to any use listed in
+   section 1 outside GitHub's platform features.
+
+3. Third-party components. Third-party packages used by the Software remain
+   under their own licenses. This license covers only the copyright holder's
+   own work.
+
+4. No warranty. The Software is provided "as is", without warranty of any kind,
+   express or implied, including warranties of merchantability, fitness for a
+   particular purpose and non-infringement. In no event will the copyright
+   holder be liable for any claim, damages or other liability arising from, out
+   of or in connection with the Software or its use.
+
+5. Licensing and acquisition. For permission to use, license or acquire the
+   Software, contact the copyright holder via https://github.com/Strippy.

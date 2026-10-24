@@ -142,4 +142,4 @@ The live app is built and deployed from the Base44 project (app id `6adbdeb30b6f
 
 ## License
 
-No license file has been added yet, so by default all rights are reserved by the owner.
+Proprietary — all rights reserved. The code is public to view, but you may not copy, reuse, deploy or redistribute it without written permission. See [LICENSE](LICENSE). For licensing or acquisition, contact [@Strippy](https://github.com/Strippy).
