@@ -20,10 +20,12 @@ Handoff is built on [Base44](https://base44.com): a React + Vite frontend, Base4
 | **Offers & Deal Room** | Structured offers (accept / decline / counter / withdraw) with a nudge on offers under half the asking price. Only the other side can accept an offer, and only at the amount they saw. An accepted offer opens a server-run Deal Room: agreed handover terms → Escrow.com → recorded delivery → buyer inspection → keys rotated → sold, with a timestamped deal record. Reviews exist only for completed deals. See [Deal Room protections](#deal-room-protections). |
 | **Community** | Public Q&A on listings, reactions (🔥 Love it, 💡 Great idea, 🛠️ I could finish this), builder profiles, follows, saves, notifications, and a Founding Builder badge for the first 100 builders. |
 | **Trust & safety** | Builder's Code at onboarding, ownership attestation on every listing, report/block, and an admin moderation desk. |
-| **Seller licence** | A$50 every 3 months to sell or license a project. Collabs, finishing jobs and free adoptions stay free. **Off until an admin switches it on.** See [Seller licence](#seller-licence). |
+| **Seller licence** | A$50 every 3 months to sell or license a project, with everything in Pro included. Collabs, finishing jobs and free adoptions stay free. **Off until an admin switches it on.** See [Seller licence](#seller-licence). |
 | **Handoff Pro** | Optional A$8.50/month Stripe subscription. **Off until an admin switches it on** — while off, nothing is limited. See [Handoff Pro](#handoff-pro). |
 
 Handoff never holds money for project sales: payments go through an Escrow.com transaction linked from the Deal Room. Handoff takes no cut of sales.
+
+**Plans at a glance.** Free → Pro (A$8.50/month, for buyers and builders) → Seller licence (A$50 every 3 months, for selling, includes Pro). Nobody needs both paid plans.
 
 ---
 
@@ -119,17 +121,23 @@ An optional monthly subscription (A$8.50/month) handled by `base44/functions/bil
 
 **Switching it on (admin):** Admin → *Handoff Pro* card → create the price in Stripe → flip the switch. The first time it's switched on, the founding window starts.
 
-| | Free (only while Pro is on) | Pro |
-| --- | --- | --- |
-| Browse, message, Q&A, saves, deal rooms | ✓ | ✓ |
-| Active listings at once | 2 | Unlimited |
-| Code scans | 3 per rolling 30 days | Unlimited (12/day fair use) |
-| Open offers at once | 3 | Unlimited |
-| New listings | Visible after 48 hours | Immediately |
-| Listing insights (saves, chats, offers, questions) | — | ✓ |
+| | Free (limits apply only while Pro is on) | Pro | Seller licence |
+| --- | --- | --- | --- |
+| Browse, message, Q&A, saves, deal rooms | ✓ | ✓ | ✓ |
+| Collabs, finishing jobs, free adoptions | ✓ | ✓ | ✓ |
+| Sell or license projects for money (once licences are on) | — | — | ✓ |
+| Active listings at once | 2 | Unlimited | Unlimited |
+| Code scans | 3 per rolling 30 days | Unlimited (12/day fair use) | Unlimited (12/day fair use) |
+| Open offers at once | 3 | Unlimited | Unlimited |
+| New listings | Visible after 48 hours | Immediately | Immediately |
+| Listing insights (saves, chats, offers, questions) | — | ✓ | ✓ |
+| Licensed seller badge | — | — | ✓ |
+| Commission on sales | None | None | None |
+| Price | Free | A$8.50/month | A$50 every 3 months (≈ A$16.67/month) |
 
 **Who gets Pro:**
 - Admins, always.
+- Licensed sellers: an active seller licence includes Pro (`source: "seller_licence"`).
 - Paying subscribers: Stripe status `active`, `trialing` or `past_due`, until the end of the paid period.
 - Founding builders: the first 100 builder profiles get Pro free for 12 months from the first switch-on. This is worked out on the server from profile creation order and can't be self-claimed.
 
@@ -148,9 +156,11 @@ A second Stripe subscription, A$50 every 3 months, handled by the same `billing`
 
 - **Needed for:** publishing a *full sale* or *licence* listing, switching a listing to one of those, and accepting an offer on one. Collabs, finishing jobs and free adoptions never need it.
 - **Enforced on the server:** listings can only be created, or have their deal type or status changed, through `listing-sync`. Entity rules block those writes from the browser. Deals can only be opened through `deal-room`.
+- **Includes Pro.** A licensed seller gets everything in Pro. Buying a licence stops a separate Pro subscription from renewing (`cancel_at_period_end`), Pro checkout is refused while licensed, and a cancelled Pro subscription can't be resumed on top of a licence, so nobody pays twice.
+- **No commission.** Sellers keep 100% of the sale price. Escrow.com charges its own fee.
 - **Who's licensed:** admins; anyone with an active licence subscription; and the first 100 builders, free for 12 months from the first switch-on.
 - **Licensed seller badge:** a public check (`billing` → `seller_licence`) puts a badge next to licensed sellers on their listings.
-- **If a licence lapses:** existing listings stay up, but the seller can't publish new for-sale listings or accept offers until they renew.
+- **If a licence lapses:** existing listings stay up and deals already in progress still finish. Buyers can't make new offers on the seller's for-sale listings (the page says the seller isn't taking offers), and the seller can't publish new for-sale listings or accept offers until they renew.
 
 Switch it on in Admin → *Paid plans*: create the price in Stripe, then flip the switch.
 

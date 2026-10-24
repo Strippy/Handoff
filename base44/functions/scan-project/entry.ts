@@ -883,7 +883,7 @@ Deno.serve(async (req) => {
     if (plan?.pro_enabled && !plan.is_pro) {
       const cap = plan.limits?.scans_per_30d ?? 3;
       if ((plan.usage?.scans_30d ?? 0) >= cap) {
-        throw new HttpError(402, `The free plan includes ${cap} scans every 30 days and you've used them. Handoff Pro gives you unlimited scans.`);
+        throw new HttpError(402, `The free plan includes ${cap} scans every 30 days and you've used them. Handoff Pro or a seller licence gives you unlimited scans.`);
       }
     }
 

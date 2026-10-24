@@ -106,7 +106,7 @@ export default function ProjectScanner({ scan, privateFindings, onScanned, onApp
         <ProGate
           compact
           title={`You’ve used your ${plan?.limits?.scans_per_30d ?? 3} free scans for the last 30 days`}
-          body="Go Pro for unlimited scans — or fill the listing in by hand below. You can add a scan later."
+          body="Go Pro or get a seller licence for unlimited scans — or fill the listing in by hand below. You can add a scan later."
         />
       )}
 

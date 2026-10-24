@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
       if (plan.is_pro) return;
       const cap = plan.limits?.active_listings ?? 2;
       if ((plan.usage?.active_listings ?? 0) >= cap) {
-        throw new HttpError(402, `The free plan allows ${cap} active listings. Archive one or go Pro for unlimited listings.`);
+        throw new HttpError(402, `The free plan allows ${cap} active listings. Archive one, or go Pro or get a seller licence for unlimited listings.`);
       }
     };
 

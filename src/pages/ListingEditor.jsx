@@ -70,7 +70,7 @@ export default function ListingEditor() {
         <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">List a project</h1>
         <ProGate
           title={`You have ${cap} active listings — the free-plan limit`}
-          body="Go Pro for unlimited listings, or archive or sell one from your builder page to free up a spot."
+          body="Go Pro or get a seller licence for unlimited listings, or archive or sell one from your builder page to free up a spot."
         />
         <Button asChild variant="outline" className="rounded-full">
           <Link to="/profile">Go to my builder page</Link>

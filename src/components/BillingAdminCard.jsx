@@ -28,9 +28,9 @@ const PLAN_COPY = {
     icon: BadgeCheck,
     tone: 'bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-200',
     off: 'Off — anyone can sell. Turn it on to require a licence for selling and licensing projects.',
-    on: 'On — selling and licensing need a licence. Collabs, finishing jobs and free adoptions stay free.',
+    on: 'On — selling and licensing need a licence, which includes everything in Pro. Collabs, finishing jobs and free adoptions stay free.',
     confirmOn: () =>
-      `Builders will need a licence to publish a full sale or licence listing, or to accept an offer on one. Collabs, finishing jobs and free adoptions stay free.`,
+      `Builders will need a licence to publish a full sale or licence listing, or to accept an offer on one. The licence includes everything in Pro, and a builder's separate Pro subscription stops renewing when they get one. Collabs, finishing jobs and free adoptions stay free.`,
     confirmOff: 'Anyone can sell again. Existing licences keep billing in Stripe until the builder cancels.',
   },
   pro: {

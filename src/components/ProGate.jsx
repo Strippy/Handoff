@@ -27,7 +27,7 @@ export function LicenceGate({ title = 'Selling needs a seller licence', body, cl
           <p className="font-display text-base font-semibold">{title}</p>
           <p className="text-sm text-muted-foreground">
             {body ||
-              `${licencePriceLabel(plan)}. It keeps scammers out and pays for the code scanner. Collabs, finishing jobs and free adoptions stay free.`}
+              `${licencePriceLabel(plan)}, with everything in Pro included and no commission on your sales. Collabs, finishing jobs and free adoptions stay free.`}
           </p>
         </div>
       </div>

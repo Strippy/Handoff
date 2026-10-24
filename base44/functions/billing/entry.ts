@@ -26,7 +26,7 @@ const PLANS: Record<PlanKey, { name: string; description: string; amount: number
   },
   seller: {
     name: "Handoff seller licence",
-    description: "Licence to sell and license projects on Handoff. Billed every 3 months.",
+    description: "Sell and license projects on Handoff. Includes everything in Handoff Pro. Billed every 3 months.",
     amount: 5000, // A$50.00
     interval: "month",
     interval_count: 3,
@@ -194,6 +194,11 @@ async function resolvePlan(db: any, me: Row | null, billing: Row | null) {
     out.seller.licensed = true; out.seller.source = "founding"; out.seller.until = sellerFoundingEnd;
   }
 
+  // A seller licence includes everything in Pro, so a seller never pays for both.
+  if (!out.is_pro && out.seller.licensed) {
+    out.is_pro = true; out.source = "seller_licence"; out.pro_until = out.seller.until;
+  }
+
   if (out.pro_enabled && !out.is_pro) {
     const since = new Date(Date.now() - 30 * 86400_000).toISOString();
     const [listings, scans, offers] = await Promise.all([
@@ -303,6 +308,11 @@ Deno.serve(async (req) => {
       if (!okOrigin(body.origin)) throw new HttpError(400, "Bad origin");
       const current = await freshSubscription(db, me!.id, plan);
       if (subActive(current)) throw new HttpError(409, plan === "pro" ? "You already have a Pro subscription." : "You already have a seller licence.");
+      if (plan === "pro") {
+        const mine = await resolvePlan(db, me, billing);
+        if (mine.source === "seller_licence") throw new HttpError(409, "Your seller licence already includes Pro.");
+        if (mine.source === "founding") throw new HttpError(409, "You already have Pro free as a founding builder.");
+      }
       // one Stripe customer per person, shared by both plans
       const rows = items(await db.Subscription.filter({ user_id: me!.id }));
       let customerId = rows.find((r) => r.stripe_customer_id)?.stripe_customer_id || "";
@@ -341,6 +351,16 @@ Deno.serve(async (req) => {
       const sessionPlan = asPlan(session.metadata?.plan);
       const sub = typeof session.subscription === "string" ? await stripe(`/subscriptions/${session.subscription}`) : session.subscription;
       await saveSubscription(db, me!.id, sessionPlan, me!.email || "", sub, typeof session.customer === "string" ? session.customer : session.customer?.id);
+      if (sessionPlan === "seller") {
+        // The licence includes Pro: stop a separate Pro subscription renewing so nobody pays twice.
+        const proRow = await subRow(db, me!.id, "pro");
+        if (proRow?.stripe_subscription_id && subActive(proRow) && !proRow.cancel_at_period_end) {
+          try {
+            const proSub = await stripe(`/subscriptions/${proRow.stripe_subscription_id}`, "POST", [["cancel_at_period_end", "true"]]);
+            await saveSubscription(db, me!.id, "pro", proRow.email, proSub, proRow.stripe_customer_id);
+          } catch { /* leave it; they can cancel Pro from the plans page */ }
+        }
+      }
       return Response.json({ ...(await resolvePlan(db, me, billing)), confirmed_plan: sessionPlan });
     }
 
@@ -348,6 +368,9 @@ Deno.serve(async (req) => {
       needUser();
       const row = await subRow(db, me!.id, plan);
       if (!row?.stripe_subscription_id) throw new HttpError(404, "No subscription found.");
+      if (action === "resume" && plan === "pro" && subActive(await freshSubscription(db, me!.id, "seller"))) {
+        throw new HttpError(409, "Your seller licence already includes Pro.");
+      }
       const sub = await stripe(`/subscriptions/${row.stripe_subscription_id}`, "POST", [["cancel_at_period_end", action === "cancel" ? "true" : "false"]]);
       await saveSubscription(db, me!.id, plan, row.email, sub, row.stripe_customer_id);
       return Response.json(await resolvePlan(db, me, billing));

@@ -24,7 +24,7 @@ import ListingOffersPanel from '@/components/ListingOffersPanel';
 import ListingReviewsPanel from '@/components/ListingReviewsPanel';
 import ScanReport from '@/components/ScanReport';
 import ListingInsights from '@/components/ListingInsights';
-import ProGate from '@/components/ProGate';
+import ProGate, { LicenceGate } from '@/components/ProGate';
 import { earlyAccessLeft, sellerLicence, usePlan } from '@/lib/billing';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -53,7 +53,7 @@ export default function ListingDetail() {
   const [counterTarget, setCounterTarget] = useState(null);
   const [busy, setBusy] = useState(false);
   const [scan, setScan] = useState(null);
-  const [sellerLicensed, setSellerLicensed] = useState(false);
+  const [sellerLic, setSellerLic] = useState({ enabled: false, licensed: true });
 
   useEffect(() => {
     if (!user?.id) return;
@@ -107,7 +107,7 @@ export default function ListingDetail() {
       }
 
       base44.functions.invoke('listing-sync', { action: 'view', listing_id: found.id }).catch(() => {});
-      sellerLicence(found.seller_id).then((lic) => active && setSellerLicensed(Boolean(lic?.enabled && lic?.licensed)));
+      sellerLicence(found.seller_id).then((lic) => active && lic && setSellerLic(lic));
     })();
     return () => {
       active = false;
@@ -117,6 +117,9 @@ export default function ListingDetail() {
   const myName = myProfile?.display_name || user?.full_name || 'Builder';
   const iAmSeller = listing?.seller_id === user?.id;
   const blocked = (myProfile?.blocked_ids || []).includes(listing?.seller_id);
+  const sellerLicensed = Boolean(sellerLic.enabled && sellerLic.licensed);
+  // A lapsed licence keeps the listing up, but a for-sale listing can't take new offers until it's renewed.
+  const offersPaused = Boolean(sellerLic.enabled && !sellerLic.licensed && ['full_sale', 'license'].includes(listing?.deal_type));
 
   const reactionCounts = useMemo(() => {
     const counts = {};
@@ -318,7 +321,7 @@ export default function ListingDetail() {
   }
 
   const stage = stageMeta(listing.stage);
-  const offerable = !iAmSeller && listing.status !== 'sold' && listing.status !== 'archived';
+  const offerable = !iAmSeller && listing.status !== 'sold' && listing.status !== 'archived' && !offersPaused;
   const earlyHours = iAmSeller || activeDeal ? 0 : earlyAccessLeft(plan, listing);
 
   if (earlyHours > 0) {
@@ -444,6 +447,13 @@ export default function ListingDetail() {
             )
           )}
 
+          {iAmSeller && offersPaused && listing.status === 'active' && (
+            <LicenceGate
+              title="Your seller licence has lapsed"
+              body="This listing stays up, but buyers can't make offers until you renew. Deals already in progress still finish."
+            />
+          )}
+
           {iAmSeller && (
             <ListingInsights listing={listing} offers={offers} questions={questions} reactions={reactions} />
           )}
@@ -484,6 +494,7 @@ export default function ListingDetail() {
           listing={listing}
           seller={seller}
           sellerLicensed={sellerLicensed}
+          offersPaused={offersPaused && !iAmSeller}
           iAmSeller={iAmSeller}
           blocked={blocked}
           busy={busy}

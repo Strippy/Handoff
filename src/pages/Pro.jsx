@@ -21,12 +21,16 @@ const fmtDate = (iso) =>
 
 // Only features that exist in the app today.
 const rows = (limits) => [
-  { label: 'Browse, message, ask questions, save, deal rooms', free: true, pro: true },
-  { label: 'Active listings at once', free: String(limits.active_listings), pro: 'Unlimited' },
-  { label: 'Code scans', free: `${limits.scans_per_30d} every 30 days`, pro: 'Unlimited*' },
-  { label: 'Open offers at once', free: String(limits.open_offers), pro: 'Unlimited' },
-  { label: 'New listings', free: `After ${limits.early_access_hours} hours`, pro: 'The moment they’re posted' },
-  { label: 'Listing insights (saves, chats, offers, questions)', free: false, pro: true },
+  { label: 'Browse, message, ask questions, save, deal rooms', free: true, pro: true, seller: true },
+  { label: 'Sell or license projects for money†', free: false, pro: false, seller: true },
+  { label: 'Collabs, finishing jobs, free adoptions', free: true, pro: true, seller: true },
+  { label: 'Active listings at once', free: String(limits.active_listings), pro: 'Unlimited', seller: 'Unlimited' },
+  { label: 'Code scans', free: `${limits.scans_per_30d} / 30 days`, pro: 'Unlimited*', seller: 'Unlimited*' },
+  { label: 'Open offers at once', free: String(limits.open_offers), pro: 'Unlimited', seller: 'Unlimited' },
+  { label: 'New listings', free: `After ${limits.early_access_hours}h`, pro: 'Instantly', seller: 'Instantly' },
+  { label: 'Listing insights', free: false, pro: true, seller: true },
+  { label: 'Licensed seller badge', free: false, pro: false, seller: true },
+  { label: 'Commission on your sales', free: 'None', pro: 'None', seller: 'None' },
 ];
 
 function Cell({ value }) {
@@ -117,6 +121,7 @@ export default function Pro() {
   const seller = plan.seller || {};
   const lsub = seller.subscription;
   const licencePrice = licencePriceLabel(plan);
+  const licensedByStripe = Boolean(lsub && ['active', 'trialing', 'past_due'].includes(lsub.status));
   const canTestLicence = !seller.enabled && plan.is_admin && plan.test_mode && seller.checkout_ready && !lsub;
 
   return (
@@ -130,8 +135,8 @@ export default function Pro() {
             {plan.is_pro && plan.pro_enabled ? 'You’re on Pro.' : 'More room to build, buy and sell.'}
           </h1>
           <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
-            {price}. Unlimited listings and scans, first look at new projects, and the numbers behind your listings.
-            Handoff doesn’t take a cut of your sales.
+            Two plans, and you never need both. Pro ({price}) is for buyers and builders. The seller licence
+            ({licencePriceLabel(plan)}) is for selling, and includes everything in Pro. Handoff never takes a cut of a sale.
           </p>
         </div>
       </section>
@@ -162,6 +167,14 @@ export default function Pro() {
               You were one of the first 100 builders here, so Pro is free until {fmtDate(plan.pro_until)}. Nothing to
               set up and no card needed.
             </p>
+          </div>
+        </div>
+      ) : plan.source === 'seller_licence' ? (
+        <div className="card-soft flex items-start gap-3 border-sky-300/60 p-5">
+          <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-sky-600" />
+          <div>
+            <p className="font-display text-base font-semibold">Your seller licence includes Pro</p>
+            <p className="text-sm text-muted-foreground">Everything in Pro is on for you while your licence is active. Nothing extra to pay.</p>
           </div>
         </div>
       ) : plan.source === 'admin' ? (
@@ -200,6 +213,18 @@ export default function Pro() {
           deal records that protect sellers, and shows a “Licensed seller” badge on your listings. Collabs, finishing
           jobs and free adoptions don’t need one.
         </p>
+        <ul className="grid gap-1.5 text-sm sm:grid-cols-2">
+          {[
+            'Everything in Pro is included',
+            'No commission — you keep 100% of the sale (Escrow.com charges its own fee)',
+            'Cancel any time and keep it until the end of the 3 months you paid for',
+            'If it lapses, your listings stay up and deals in progress still finish',
+          ].map((t) => (
+            <li key={t} className="flex items-start gap-2 text-muted-foreground">
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /> {t}
+            </li>
+          ))}
+        </ul>
         {!seller.enabled ? (
           <p className="rounded-2xl bg-secondary/60 p-3 text-sm text-muted-foreground">
             Selling is free right now — no licence needed. When licences switch on, the first 100 builders get one free
@@ -213,10 +238,17 @@ export default function Pro() {
           <p className="rounded-2xl bg-secondary/60 p-3 text-sm text-muted-foreground">Admin — always licensed.</p>
         ) : !seller.licensed ? (
           seller.checkout_ready ? (
-            <Button className="rounded-full" disabled={Boolean(busy)} onClick={run('licence', startLicenceCheckout)}>
-              {busy === 'licence' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BadgeCheck className="mr-2 h-4 w-4" />}
-              Get a seller licence · {licencePrice}
-            </Button>
+            <div className="space-y-2">
+              <Button className="rounded-full" disabled={Boolean(busy)} onClick={run('licence', startLicenceCheckout)}>
+                {busy === 'licence' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BadgeCheck className="mr-2 h-4 w-4" />}
+                Get a seller licence · {licencePrice}
+              </Button>
+              {sub && ['active', 'trialing', 'past_due'].includes(sub.status) && !sub.cancel_at_period_end && (
+                <p className="text-xs text-muted-foreground">
+                  Your Pro subscription will stop renewing once you have a licence, so you never pay for both.
+                </p>
+              )}
+            </div>
           ) : (
             <p className="text-sm text-muted-foreground">Licences are being set up — check back soon.</p>
           )
@@ -262,16 +294,20 @@ export default function Pro() {
               ? 'Your last payment didn’t go through — Stripe will retry. Update your card from the receipt email to keep Pro.'
               : ['active', 'trialing'].includes(sub.status)
                 ? sub.cancel_at_period_end
-                  ? `Cancelled — you keep Pro until ${fmtDate(sub.current_period_end)}, then you’re back on the free plan.`
+                  ? licensedByStripe
+                    ? `Stops renewing on ${fmtDate(sub.current_period_end)} — your seller licence already includes Pro.`
+                    : `Cancelled — you keep Pro until ${fmtDate(sub.current_period_end)}, then you’re back on the free plan.`
                   : `${price} · renews ${fmtDate(sub.current_period_end)}.`
                 : 'Your subscription has ended.'}
           </p>
           {['active', 'trialing', 'past_due'].includes(sub.status) && (
             <div className="flex flex-wrap gap-2">
               {sub.cancel_at_period_end ? (
+                !licensedByStripe && (
                 <Button className="rounded-full" disabled={Boolean(busy)} onClick={run('resume', resumePro, 'Pro will keep renewing')}>
                   {busy === 'resume' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Keep my subscription
                 </Button>
+                )
               ) : (
                 <Button variant="outline" className="rounded-full" disabled={Boolean(busy)} onClick={run('cancel', cancelPro, 'Subscription cancelled')}>
                   {busy === 'cancel' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Cancel subscription
@@ -293,19 +329,25 @@ export default function Pro() {
 
       {/* comparison */}
       <section className="card-soft overflow-hidden">
-        <div className="grid grid-cols-[1fr_6.5rem_7.5rem] items-center gap-2 border-b border-border/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:grid-cols-[1fr_9rem_10rem] sm:px-5">
+        <div className="grid grid-cols-[1fr_3.75rem_4.25rem_4.75rem] items-end gap-1.5 border-b border-border/60 px-3 py-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:grid-cols-[1fr_7rem_7rem_8rem] sm:gap-2 sm:px-5 sm:text-xs">
           <span>What you get</span>
           <span className="text-center">Free</span>
-          <span className="text-center text-amber-700 dark:text-amber-300">Pro</span>
+          <span className="text-center text-amber-700 dark:text-amber-300">
+            Pro<span className="block font-medium normal-case tracking-normal">{price.replace('/month', '/mo')}</span>
+          </span>
+          <span className="text-center text-sky-700 dark:text-sky-300">
+            Seller<span className="block font-medium normal-case tracking-normal">{licencePrice.replace(' every 3 months', '/3 mo')}</span>
+          </span>
         </div>
         {rows(limits).map((row) => (
           <div
             key={row.label}
-            className="grid grid-cols-[1fr_6.5rem_7.5rem] items-center gap-2 border-b border-border/40 px-4 py-3 text-sm last:border-0 sm:grid-cols-[1fr_9rem_10rem] sm:px-5"
+            className="grid grid-cols-[1fr_3.75rem_4.25rem_4.75rem] items-center gap-1.5 border-b border-border/40 px-3 py-3 text-xs last:border-0 sm:grid-cols-[1fr_7rem_7rem_8rem] sm:gap-2 sm:px-5 sm:text-sm"
           >
             <span>{row.label}</span>
             <span className="text-center text-muted-foreground"><Cell value={row.free} /></span>
             <span className="text-center font-medium"><Cell value={row.pro} /></span>
+            <span className="text-center font-medium"><Cell value={row.seller} /></span>
           </div>
         ))}
       </section>
@@ -321,6 +363,7 @@ export default function Pro() {
               <p className="text-xs text-muted-foreground">
                 Secure checkout by Stripe — Handoff never sees your card. Cancel any time here and keep Pro until the end
                 of the month you paid for.
+                {seller.enabled && !seller.licensed && ' Selling? Get the seller licence instead — it includes Pro.'}
               </p>
             </>
           ) : (
@@ -337,7 +380,8 @@ export default function Pro() {
       )}
 
       <p className="text-xs text-muted-foreground">
-        *Unlimited scans are still capped at 12 a day per builder to keep the scanner fast for everyone.
+        *Unlimited scans are still capped at 12 a day per builder to keep the scanner fast for everyone. †Until seller
+        licences are switched on, anyone can sell for free.
       </p>
     </div>
   );

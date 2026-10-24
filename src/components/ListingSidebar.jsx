@@ -12,6 +12,7 @@ export default function ListingSidebar({
   listing,
   seller,
   sellerLicensed,
+  offersPaused,
   iAmSeller,
   blocked,
   busy,
@@ -76,6 +77,11 @@ export default function ListingSidebar({
           </div>
         ) : (
           <div className="space-y-2">
+            {offersPaused && (
+              <p className="rounded-2xl bg-secondary/70 px-3 py-2 text-xs text-muted-foreground">
+                This seller isn't taking offers right now. You can still message them.
+              </p>
+            )}
             {offerable && (
               <Button className="w-full rounded-full" disabled={busy} onClick={onOpenOffer}>
                 {listing.deal_type === 'free_adoption' ? 'Request to adopt' : 'Make an offer'}
