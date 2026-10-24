@@ -25,7 +25,7 @@ import ListingReviewsPanel from '@/components/ListingReviewsPanel';
 import ScanReport from '@/components/ScanReport';
 import ListingInsights from '@/components/ListingInsights';
 import ProGate from '@/components/ProGate';
-import { earlyAccessLeft, usePlan } from '@/lib/billing';
+import { earlyAccessLeft, sellerLicence, usePlan } from '@/lib/billing';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Crown, Eye, Loader2, Share2, Sparkles } from 'lucide-react';
@@ -53,6 +53,7 @@ export default function ListingDetail() {
   const [counterTarget, setCounterTarget] = useState(null);
   const [busy, setBusy] = useState(false);
   const [scan, setScan] = useState(null);
+  const [sellerLicensed, setSellerLicensed] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -106,6 +107,7 @@ export default function ListingDetail() {
       }
 
       base44.functions.invoke('listing-sync', { action: 'view', listing_id: found.id }).catch(() => {});
+      sellerLicence(found.seller_id).then((lic) => active && setSellerLicensed(Boolean(lic?.enabled && lic?.licensed)));
     })();
     return () => {
       active = false;
@@ -220,7 +222,7 @@ export default function ListingDetail() {
     setBusy(true);
     await base44.entities.Offer.update(offer.id, { status });
     setOffers(offers.map((item) => (item.id === offer.id ? { ...item, status } : item)));
-    const target = status === 'declined' && iAmSeller ? offer.buyer_id : listing.seller_id;
+    const target = iAmSeller ? offer.buyer_id : listing.seller_id;
     pushNotification({
       user_id: target,
       type: 'offer',
@@ -240,29 +242,24 @@ export default function ListingDetail() {
 
   const acceptOffer = async (offer) => {
     setBusy(true);
-    const deal = await base44.entities.Deal.create({
-      listing_id: listing.id,
-      listing_title: listing.title,
-      listing_cover: listing.cover_image || '',
-      offer_id: offer.id,
-      deal_type: listing.deal_type,
-      buyer_id: offer.buyer_id,
-      buyer_name: offer.buyer_name,
-      seller_id: listing.seller_id,
-      seller_name: listing.seller_name,
-      amount: offer.amount,
-      currency: offer.currency,
-      handover_notes: '',
-      status: 'open',
-    });
-    await base44.entities.Offer.update(offer.id, { status: 'accepted', deal_id: deal.id });
-    const others = offers.filter((item) => item.id !== offer.id && item.status === 'pending');
-    for (const other of others) {
-      await base44.entities.Offer.update(other.id, { status: 'declined' });
+    // The server checks who may accept, that the amount hasn't changed, and the seller licence.
+    let deal;
+    try {
+      const res = await base44.functions.invoke('deal-room', {
+        action: 'accept_offer',
+        offer_id: offer.id,
+        expected_amount: offer.amount,
+      });
+      deal = res?.data?.deal;
+      if (!deal) throw new Error('Could not open the deal — try again.');
+    } catch (err) {
+      setBusy(false);
+      toast({ title: 'Couldn’t accept that offer', description: err?.response?.data?.error || err?.message, variant: 'destructive' });
+      return;
     }
-    await base44.entities.Listing.update(listing.id, { status: 'reserved' });
+    const counterparty = iAmSeller ? offer.buyer_id : listing.seller_id;
     pushNotification({
-      user_id: offer.buyer_id,
+      user_id: counterparty,
       type: 'deal',
       title: 'Your offer was accepted',
       body: `Open the deal room for ${listing.title} and work through the handover pack.`,
@@ -277,10 +274,14 @@ export default function ListingDetail() {
 
   const updateListingStatus = async (status) => {
     setBusy(true);
-    await base44.entities.Listing.update(listing.id, { status });
-    setListing({ ...listing, status });
+    try {
+      const res = await base44.functions.invoke('listing-sync', { action: 'set_status', listing_id: listing.id, status });
+      setListing({ ...listing, ...(res?.data?.listing || { status }) });
+      toast({ title: status === 'archived' ? 'Listing archived' : status === 'active' ? 'Back on the market' : 'Listing marked sold' });
+    } catch (err) {
+      toast({ title: 'Couldn’t change that', description: err?.response?.data?.error || err?.message, variant: 'destructive' });
+    }
     setBusy(false);
-    toast({ title: status === 'archived' ? 'Listing archived' : 'Listing marked sold' });
   };
 
   const share = async () => {
@@ -482,6 +483,7 @@ export default function ListingDetail() {
         <ListingSidebar
           listing={listing}
           seller={seller}
+          sellerLicensed={sellerLicensed}
           iAmSeller={iAmSeller}
           blocked={blocked}
           busy={busy}

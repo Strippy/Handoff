@@ -17,9 +17,10 @@ Handoff is built on [Base44](https://base44.com): a React + Vite frontend, Base4
 | **Project scanner** | Upload a `.zip` or pick a GitHub repo → a deterministic **handoff-readiness score** (0–100), what it's built on, signs of AI tools, what's connected, what's missing, a secret scan, and an AI read of the code that pre-fills the listing. See [Project scanner](#project-scanner). |
 | **GitHub sign-in** | Read-only GitHub App. Builders pick which repos Handoff may read, can scan private repos, and get a **Verified repo owner** badge when GitHub confirms their access. |
 | **Messaging** | Real-time 1:1 chat tied to a listing, image/clip attachments, and a warning banner when someone suggests paying outside escrow. |
-| **Offers & Deal Room** | Structured offers (accept / decline / counter / withdraw) with a nudge on offers under half the asking price. An accepted offer opens a Deal Room checklist: Escrow.com → code transfer → assets → buyer confirms → sold. Reviews unlock only after a completed deal. |
+| **Offers & Deal Room** | Structured offers (accept / decline / counter / withdraw) with a nudge on offers under half the asking price. Only the other side can accept an offer, and only at the amount they saw. An accepted offer opens a server-run Deal Room: agreed handover terms → Escrow.com → recorded delivery → buyer inspection → keys rotated → sold, with a timestamped deal record. Reviews exist only for completed deals. See [Deal Room protections](#deal-room-protections). |
 | **Community** | Public Q&A on listings, reactions (🔥 Love it, 💡 Great idea, 🛠️ I could finish this), builder profiles, follows, saves, notifications, and a Founding Builder badge for the first 100 builders. |
 | **Trust & safety** | Builder's Code at onboarding, ownership attestation on every listing, report/block, and an admin moderation desk. |
+| **Seller licence** | A$50 every 3 months to sell or license a project. Collabs, finishing jobs and free adoptions stay free. **Off until an admin switches it on.** See [Seller licence](#seller-licence). |
 | **Handoff Pro** | Optional A$8.50/month Stripe subscription. **Off until an admin switches it on** — while off, nothing is limited. See [Handoff Pro](#handoff-pro). |
 
 Handoff never holds money for project sales: payments go through an Escrow.com transaction linked from the Deal Room. Handoff takes no cut of sales.
@@ -49,8 +50,9 @@ base44/
   functions/
     scan-project/   Project scanner + attaching a scan to a listing
     github/         GitHub App setup, sign-in, repo list, disconnect
-    listing-sync/   View counts and deal-driven listing status (server-side)
-    billing/        Handoff Pro: plan status, Stripe checkout, cancel/resume, admin switch
+    listing-sync/   The only way to create a listing or change its deal type/status (licence + plan checks), view counts
+    deal-room/      Deal state machine: accept offer, terms, escrow, receipt, problems, cancel, complete, reviews
+    billing/        Pro + seller licence: plan status, Stripe checkout, cancel/resume, admin switches
 ```
 
 ---
@@ -90,6 +92,13 @@ The report also covers:
 - **Secret scan:** 13 patterns plus committed `.env` files. File and line are visible to the seller only; values are never stored.
 
 Limits: 50 MB per zip, 12 scans per user per day. Build folders and `node_modules` are skipped.
+
+**Scanner safety.** Uploaded code is never run and never written to disk:
+- The zip is streamed in memory. Nothing is extracted to a filesystem, so path traversal (`../`) and symlinks can't reach anything. Paths are also cleaned of `..`, absolute prefixes and control characters before they're shown.
+- No install scripts, build steps or parsers that execute code. The analysis is text matching only.
+- **Zip bombs:** every decompressed byte is counted for real. If any file turns out bigger than its header claims, or its compressed size couldn't come from honest deflate, the whole upload is rejected. Total decompression is capped at 300 MB, unzipping at 15 s and analysis at 20 s. Only text files under 400 KB (30 MB in total) are read.
+- **Prompt injection:** the AI is told the files are untrusted data and to ignore instructions inside them. It never sets the score, and its text is labelled as an AI summary that can be wrong.
+- The public report says plainly that it's automated checks, not an audit or a guarantee. Public-repo scans that GitHub hasn't verified are marked *Ownership not verified*.
 
 A scan is attached to a listing by the server (`action: "attach"`), and the score fields on a listing can only be written server-side, so sellers can't fake their score.
 
@@ -131,14 +140,42 @@ An optional monthly subscription (A$8.50/month) handled by `base44/functions/bil
 - Stripe keys stay in function secrets (`STRIPE_SECRET_KEY`). Subscription records live in the server-only `Subscription` table.
 - While Stripe is in test mode, admins can run a checkout with test card 4242 4242 4242 4242 before launch.
 
-**Enforcement:** the scan limit is enforced on the server (`scan-project` asks `billing` for the plan). The listing, offer, early-access and insights limits are enforced in the UI.
+**Enforcement:** the scan limit and the active-listing limit are enforced on the server (`scan-project` and `listing-sync` ask `billing` for the plan). The offer, early-access and insights limits are enforced in the UI.
+
+## Seller licence
+
+A second Stripe subscription, A$50 every 3 months, handled by the same `billing` function. **It ships switched off.**
+
+- **Needed for:** publishing a *full sale* or *licence* listing, switching a listing to one of those, and accepting an offer on one. Collabs, finishing jobs and free adoptions never need it.
+- **Enforced on the server:** listings can only be created, or have their deal type or status changed, through `listing-sync`. Entity rules block those writes from the browser. Deals can only be opened through `deal-room`.
+- **Who's licensed:** admins; anyone with an active licence subscription; and the first 100 builders, free for 12 months from the first switch-on.
+- **Licensed seller badge:** a public check (`billing` → `seller_licence`) puts a badge next to licensed sellers on their listings.
+- **If a licence lapses:** existing listings stay up, but the seller can't publish new for-sale listings or accept offers until they renew.
+
+Switch it on in Admin → *Paid plans*: create the price in Stripe, then flip the switch.
+
+## Deal Room protections
+
+Once a buyer has the code, "it doesn't work, refund me" is the main way a seller gets ripped off. Escrow.com lets a buyer reject during the inspection period, but they have to "return" what they got, and the seller can refuse the return, which starts a dispute and then arbitration. What decides it is evidence of what was agreed and what was delivered. The Deal Room produces that evidence. Every deal write goes through `deal-room` (or `scan-project` for deliveries). Entity rules deny direct writes to deals and reviews.
+
+1. **Agreed terms first.** The seller writes what's included, how the buyer will check it works (one check per line) and the inspection period (1–30 days, matching Escrow.com). Both sides agree to a fingerprint (sha256 of the terms + price). Editing the terms resets both agreements. The terms lock once money is in escrow.
+2. **Real escrow only.** Only `https://*.escrow.com` transaction links are accepted, which stops look-alike "escrow" phishing links.
+3. **Code after money.** Delivery is blocked until the seller confirms the escrow is funded.
+4. **Recorded delivery.** For a zip, the server stores its sha256 and size. For a repo, it stores the exact commit. Both get a fresh scan (files, lines, score) compared against the listing's scan. The record locks once the buyer marks it received.
+5. **Inspection window.** The buyer marks the code received, which starts the agreed inspection period. Downloads of the delivered zip are logged.
+6. **No silent walk-away.** After delivery, the buyer can't cancel. They raise a problem against a specific agreed check instead, which goes on the record and to the admin queue. Refunds are decided through Escrow.com.
+7. **Keys rotated.** The seller must confirm every key and password has been revoked or rotated before the deal can complete.
+8. **Each side ticks only its own steps, in order.** A seller can't tick "buyer confirmed", and nobody can fake a completed deal.
+9. **Reviews only for completed deals.** One per person per deal, written by the server. Reviews can't be edited to point at someone else.
+10. **Deal record.** Every step is logged with a timestamp by the server. Either side can copy the full record (terms, fingerprints, escrow link, delivery proof, timeline) for Escrow.com.
 
 ---
 
 ## Security model
 
 - **Row-level security on every entity.** Messages, conversations, offers, deals and notifications are readable only by the people involved. Listings and profiles are editable only by their owner or an admin. Reports are admin-only.
-- **Server-only tables:** `AppConfig` (GitHub App credentials, Pro settings), `GithubToken` and `Subscription` deny all client access. `GithubIdentity` (the verified badge) is public to read but writable only by the server.
+- **Server-only writes:** `Deal` and `Review` can only be written by functions. Listings can only be created through `listing-sync`, and their `status`, `deal_type`, seller fields, `views` and attestation date are field-locked. Offer amounts and parties can't be edited after an offer is sent, and offers can only be created by one of the two parties.
+- **Server-only tables:** `AppConfig` (GitHub App credentials, plan settings), `GithubToken` and `Subscription` deny all client access. `GithubIdentity` (the verified badge) is public to read but writable only by the server.
 - **Field-level security** on `Listing.scan_id`, `scan_score`, `scan_grade` and `scan_repo_verified`.
 - **Private findings:** secret-scan file paths are readable only by the scan's owner.
 - **Uploaded zips** go to private storage and are read only by the scanner.

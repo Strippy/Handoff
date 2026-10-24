@@ -18,6 +18,9 @@ export default function OfferCard({ offer, user, onAccept, onDecline, onCounter,
   const iAmBuyer = offer.buyer_id === user?.id;
   const iAmSeller = offer.seller_id === user?.id;
   const isPending = offer.status === 'pending';
+  // Whoever made an offer can only withdraw it; the other side accepts, counters or declines.
+  const mine = offer.created_by_id ? offer.created_by_id === user?.id : iAmBuyer && !offer.parent_offer_id;
+  const theirs = !mine && (iAmBuyer || iAmSeller);
 
   return (
     <div className="rounded-2xl border border-border/70 bg-background/60 p-4">
@@ -39,7 +42,7 @@ export default function OfferCard({ offer, user, onAccept, onDecline, onCounter,
           </div>
 
           <p className="text-xs font-medium text-muted-foreground">
-            {iAmSeller ? offer.buyer_name || 'A builder' : 'Your offer'}
+            {mine ? 'Your offer' : iAmSeller ? offer.buyer_name || 'A builder' : 'Counter from the seller'}
             {offer.created_date && (
               <span className="ml-2 inline-flex items-center gap-1 font-normal">
                 <Clock className="h-3 w-3" /> {timeAgo(offer.created_date)}
@@ -55,12 +58,12 @@ export default function OfferCard({ offer, user, onAccept, onDecline, onCounter,
           )}
 
           <div className="flex flex-wrap gap-2 pt-1">
-            {isPending && iAmBuyer && (
+            {isPending && mine && (
               <Button size="sm" variant="outline" className="rounded-full" disabled={busy} onClick={() => onWithdraw(offer)}>
                 Withdraw
               </Button>
             )}
-            {isPending && iAmSeller && (
+            {isPending && theirs && (
               <>
                 <Button size="sm" className="rounded-full" disabled={busy} onClick={() => onAccept(offer)}>
                   Accept

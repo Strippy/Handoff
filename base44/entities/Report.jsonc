@@ -1,20 +1,26 @@
 {
   "name": "Report",
-  "type": "object",
   "properties": {
+    "details": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    },
     "reporter_id": {
       "type": "string"
     },
     "reporter_name": {
       "type": "string"
     },
-    "target_type": {
-      "type": "string",
+    "status": {
+      "default": "open",
       "enum": [
-        "listing",
-        "builder",
-        "message"
-      ]
+        "open",
+        "dismissed",
+        "actioned"
+      ],
+      "type": "string"
     },
     "target_id": {
       "type": "string"
@@ -22,20 +28,14 @@
     "target_label": {
       "type": "string"
     },
-    "reason": {
-      "type": "string"
-    },
-    "details": {
-      "type": "string"
-    },
-    "status": {
-      "type": "string",
+    "target_type": {
       "enum": [
-        "open",
-        "dismissed",
-        "actioned"
+        "listing",
+        "builder",
+        "message",
+        "deal"
       ],
-      "default": "open"
+      "type": "string"
     }
   },
   "required": [
@@ -43,6 +43,7 @@
     "target_id",
     "reason"
   ],
+  "type": "object",
   "rls": {
     "create": true,
     "read": {

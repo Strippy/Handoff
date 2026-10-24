@@ -41,7 +41,8 @@ export default function Notifications() {
       await base44.entities.Notification.update(item.id, { read: true });
       setItems(items.map((entry) => (entry.id === item.id ? { ...entry, read: true } : entry)));
     }
-    if (item.link) navigate(item.link);
+    // in-app links only — a notification can never send you off-site
+    if (item.link && item.link.startsWith('/') && !item.link.startsWith('//')) navigate(item.link);
   };
 
   if (loading) {

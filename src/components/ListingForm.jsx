@@ -15,6 +15,8 @@ import {
 import MediaUploader from '@/components/MediaUploader';
 import ProjectScanner from '@/components/ProjectScanner';
 import CompletenessMeter from '@/components/CompletenessMeter';
+import { LicenceGate } from '@/components/ProGate';
+import { needsLicence, usePlan } from '@/lib/billing';
 import { CATEGORIES, CURRENCIES, DEAL_TYPES, STAGES } from '@/lib/marketplace';
 import { Loader2, Plus, X } from 'lucide-react';
 
@@ -96,6 +98,9 @@ const emptyForm = {
 
 export default function ListingForm({ initial, user, profile, onSaved }) {
   const [form, setForm] = useState(() => ({ ...emptyForm, ...(initial || {}) }));
+  const plan = usePlan();
+  // New for-sale listings (or switching an existing one to for-sale) need a seller licence while licences are on.
+  const licenceBlocked = needsLicence(plan, form.deal_type) && (!initial?.id || initial.deal_type !== form.deal_type);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [attested, setAttested] = useState(Boolean(initial?.ownership_attested_at));
@@ -163,33 +168,27 @@ export default function ListingForm({ initial, user, profile, onSaved }) {
       setError('Tick the ownership box — only list what is yours to sell or share.');
       return;
     }
+    if (licenceBlocked) {
+      setError('Selling or licensing needs a seller licence. Get one above, or pick collab, finishing job or free adoption.');
+      return;
+    }
     setSaving(true);
     setError('');
-    const payload = {
-      ...form,
-      price: form.price === '' || form.price === null ? 0 : Number(form.price),
-    };
-    delete payload.id;
-    delete payload.created_date;
-    delete payload.updated_date;
-    delete payload.created_by_id;
-    // scan fields are server-written only (field-level security)
-    delete payload.scan_id;
-    delete payload.scan_score;
-    delete payload.scan_grade;
+    // The server validates every field, sets the seller and status, and checks the licence and plan limits.
     let saved;
-    if (initial?.id) {
-      saved = await base44.entities.Listing.update(initial.id, payload);
-    } else {
-      saved = await base44.entities.Listing.create({
-        ...payload,
-        status: 'active',
-        views: 0,
-        seller_id: user.id,
-        seller_name: profile?.display_name || user.full_name || 'Builder',
-        seller_avatar: profile?.avatar_url || '',
-        ownership_attested_at: new Date().toISOString(),
+    try {
+      const res = await base44.functions.invoke('listing-sync', {
+        action: 'save',
+        listing_id: initial?.id || undefined,
+        attested: true,
+        data: { ...form, price: form.price === '' || form.price === null ? 0 : Number(form.price) },
       });
+      saved = res?.data?.listing;
+      if (!saved) throw new Error('Saving failed — try again.');
+    } catch (err) {
+      setError(err?.response?.data?.error || err?.message || 'Saving failed — try again.');
+      setSaving(false);
+      return;
     }
     if (scan?.id && saved?.id && saved.scan_id !== scan.id) {
       try {
@@ -461,10 +460,12 @@ export default function ListingForm({ initial, user, profile, onSaved }) {
           </span>
         </label>
 
+        {licenceBlocked && <LicenceGate />}
+
         {error && <p className="text-sm font-medium text-destructive">{error}</p>}
 
         <div className="flex flex-col gap-3 sm:flex-row">
-          <Button className="rounded-full px-6" disabled={saving} onClick={save}>
+          <Button className="rounded-full px-6" disabled={saving || licenceBlocked} onClick={save}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {initial?.id ? 'Save changes' : 'Publish listing'}
           </Button>

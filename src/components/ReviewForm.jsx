@@ -14,21 +14,23 @@ export default function ReviewForm({ deal, user, profile, onSubmitted }) {
   const revieweeId = iAmBuyer ? deal.seller_id : deal.buyer_id;
   const revieweeName = iAmBuyer ? deal.seller_name : deal.buyer_name;
 
+  const [error, setError] = useState('');
+
   const submit = async () => {
     if (!rating) return;
     setSaving(true);
-    const created = await base44.entities.Review.create({
-      deal_id: deal.id,
-      listing_id: deal.listing_id,
-      listing_title: deal.listing_title,
-      reviewer_id: user.id,
-      reviewer_name: profile?.display_name || user.full_name || 'A builder',
-      reviewer_avatar: profile?.avatar_url || '',
-      reviewer_role: iAmBuyer ? 'buyer' : 'seller',
-      reviewee_id: revieweeId,
-      rating,
-      body: body.trim(),
-    });
+    setError('');
+    // The server checks the deal is complete, you're in it, and you haven't reviewed it already.
+    let created;
+    try {
+      const res = await base44.functions.invoke('deal-room', { action: 'review', deal_id: deal.id, rating, body: body.trim() });
+      created = res?.data?.review;
+      if (!created) throw new Error('Could not post the review — try again.');
+    } catch (err) {
+      setError(err?.response?.data?.error || err?.message);
+      setSaving(false);
+      return;
+    }
     pushNotification({
       user_id: revieweeId,
       type: 'review',
@@ -73,6 +75,8 @@ export default function ReviewForm({ deal, user, profile, onSubmitted }) {
         placeholder="Was it as described? Was the handover clean? Would you deal with them again?"
         className="rounded-2xl"
       />
+
+      {error && <p className="text-sm font-medium text-destructive">{error}</p>}
 
       <Button className="rounded-full px-6" disabled={!rating || saving} onClick={submit}>
         {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

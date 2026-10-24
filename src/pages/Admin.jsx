@@ -176,6 +176,13 @@ export default function Admin() {
                         </Link>
                       </Button>
                     )}
+                    {report.target_type === 'deal' && (
+                      <Button asChild variant="outline" size="sm" className="rounded-full">
+                        <Link to={`/deals/${report.target_id}`} target="_blank">
+                          Open the deal record
+                        </Link>
+                      </Button>
+                    )}
                     {report.target_type === 'builder' && (
                       <Button asChild variant="outline" size="sm" className="rounded-full">
                         <Link to={`/builder/${report.target_id}`} target="_blank">

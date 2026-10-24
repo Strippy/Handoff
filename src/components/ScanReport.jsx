@@ -98,6 +98,14 @@ export default function ScanReport({ scan, mode = 'public', privateFindings, def
           Scored from what's actually in the files — docs, setup, secrets, tests, connections. The AI only writes the
           summary; it never changes the number.
         </p>
+        {!scan.repo_verified && scan.source_type === 'github' && !scan.repo_private && (
+          <p
+            className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-300"
+            title="Anyone can scan a public repo. GitHub hasn't confirmed this seller owns it."
+          >
+            Ownership not verified
+          </p>
+        )}
         {scan.repo_verified && (
           <p
             className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300"
@@ -170,9 +178,10 @@ export default function ScanReport({ scan, mode = 'public', privateFindings, def
       {ai?.summary && (
         <div className="rounded-2xl bg-secondary/60 p-4">
           <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            <Bot className="h-3.5 w-3.5" /> AI read of the code
+            <Bot className="h-3.5 w-3.5" /> AI summary of the seller's files
           </p>
           <p className="mt-1.5 text-sm leading-relaxed">{ai.summary}</p>
+          <p className="mt-1.5 text-[11px] text-muted-foreground">Written by AI from the uploaded files. It can be wrong, and it isn't a check the code works.</p>
         </div>
       )}
 
@@ -280,6 +289,14 @@ export default function ScanReport({ scan, mode = 'public', privateFindings, def
             )}
           </Block>
         </>
+      )}
+
+      {!owner && (
+        <p className="rounded-2xl border border-dashed border-border p-3 text-[11px] leading-relaxed text-muted-foreground">
+          Automated checks of the files the seller uploaded — not a security audit, and not a promise the project works.
+          Secret detection can miss keys. Agree how you'll check it works in the Deal Room, and rotate every key and
+          password after any handover.
+        </p>
       )}
 
       <Button variant="ghost" size="sm" className="rounded-full text-xs" onClick={() => setOpen(!open)}>

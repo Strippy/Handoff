@@ -1,45 +1,131 @@
 {
   "name": "Offer",
-  "type": "object",
   "properties": {
-    "listing_id": {
-      "type": "string"
-    },
-    "listing_title": {
-      "type": "string"
-    },
-    "listing_cover": {
-      "type": "string"
-    },
-    "buyer_id": {
-      "type": "string"
-    },
-    "buyer_name": {
-      "type": "string"
+    "amount": {
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
+      "type": "number"
     },
     "buyer_avatar": {
       "type": "string"
     },
-    "seller_id": {
+    "buyer_id": {
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
       "type": "string"
     },
-    "seller_name": {
+    "buyer_name": {
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
       "type": "string"
-    },
-    "amount": {
-      "type": "number"
     },
     "currency": {
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
+      "type": "string"
+    },
+    "deal_id": {
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
+      "type": "string"
+    },
+    "listing_cover": {
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
+      "type": "string"
+    },
+    "listing_id": {
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
+      "type": "string"
+    },
+    "listing_title": {
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
       "type": "string"
     },
     "message": {
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
       "type": "string"
     },
-    "timeline": {
+    "parent_offer_id": {
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
+      "type": "string"
+    },
+    "seller_id": {
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
+      "type": "string"
+    },
+    "seller_name": {
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
       "type": "string"
     },
     "status": {
-      "type": "string",
+      "default": "pending",
       "enum": [
         "pending",
         "accepted",
@@ -47,12 +133,16 @@
         "countered",
         "withdrawn"
       ],
-      "default": "pending"
-    },
-    "parent_offer_id": {
       "type": "string"
     },
-    "deal_id": {
+    "timeline": {
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
       "type": "string"
     }
   },
@@ -62,7 +152,21 @@
     "seller_id"
   ],
   "rls": {
-    "create": true,
+    "create": {
+      "$or": [
+        {
+          "data.buyer_id": "{{user.id}}"
+        },
+        {
+          "data.seller_id": "{{user.id}}"
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
     "read": {
       "$or": [
         {
@@ -87,11 +191,7 @@
           "data.seller_id": "{{user.id}}"
         }
       ]
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
     }
-  }
+  },
+  "type": "object"
 }

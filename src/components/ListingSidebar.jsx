@@ -6,11 +6,12 @@ import { Separator } from '@/components/ui/separator';
 import ReactionBar from '@/components/ReactionBar';
 import CompletenessMeter from '@/components/CompletenessMeter';
 import { dealMeta, formatPrice, initials } from '@/lib/marketplace';
-import { Bookmark, BookmarkCheck, MessageCircle, Pencil, Users } from 'lucide-react';
+import { BadgeCheck, Bookmark, BookmarkCheck, MessageCircle, Pencil, Users } from 'lucide-react';
 
 export default function ListingSidebar({
   listing,
   seller,
+  sellerLicensed,
   iAmSeller,
   blocked,
   busy,
@@ -47,12 +48,22 @@ export default function ListingSidebar({
                 <Pencil className="mr-2 h-4 w-4" /> Edit listing
               </Link>
             </Button>
-            {listing.status !== 'sold' && (
-              <Button className="w-full rounded-full" disabled={busy} onClick={() => onStatusChange('sold')}>
-                Mark as sold
+            {listing.status === 'reserved' && (
+              <p className="rounded-2xl bg-secondary/70 px-3 py-2 text-xs text-muted-foreground">
+                A deal is in progress. Finish or cancel it in the Deal Room to change this listing's status.
+              </p>
+            )}
+            {listing.status === 'archived' && (
+              <Button className="w-full rounded-full" disabled={busy} onClick={() => onStatusChange('active')}>
+                Put back on the market
               </Button>
             )}
-            {listing.status !== 'archived' && (
+            {['active', 'archived'].includes(listing.status) && (
+              <Button className="w-full rounded-full" variant={listing.status === 'archived' ? 'outline' : 'default'} disabled={busy} onClick={() => onStatusChange('sold')}>
+                Mark as sold elsewhere
+              </Button>
+            )}
+            {listing.status === 'active' && (
               <Button
                 variant="ghost"
                 className="w-full rounded-full text-muted-foreground"
@@ -124,6 +135,11 @@ export default function ListingSidebar({
             <p className="truncate font-display text-sm font-semibold">
               {listing.seller_name || 'A builder'}
               {seller?.founding_builder && <span className="ml-2 text-xs text-primary">Founding Builder</span>}
+              {sellerLicensed && (
+                <span className="ml-2 inline-flex items-center gap-0.5 text-xs text-sky-700 dark:text-sky-300" title="Holds a current Handoff seller licence">
+                  <BadgeCheck className="h-3 w-3" /> Licensed seller
+                </span>
+              )}
             </p>
             <p className="truncate text-xs text-muted-foreground">{seller?.headline || 'Builder on Handoff'}</p>
           </div>

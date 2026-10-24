@@ -1,17 +1,22 @@
 {
-  "name": "AppConfig",
-  "type": "object",
   "description": "Server-only app settings (GitHub App credentials, billing). No client access.",
+  "name": "AppConfig",
   "properties": {
-    "key": {
-      "type": "string",
-      "description": "Config key, e.g. github_app"
+    "callback_urls": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "configured_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "configured_by": {
+      "type": "string"
     },
     "github_app_id": {
       "type": "number"
-    },
-    "github_slug": {
-      "type": "string"
     },
     "github_client_id": {
       "type": "string"
@@ -25,50 +30,67 @@
     "github_owner": {
       "type": "string"
     },
-    "callback_urls": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
+    "github_slug": {
+      "type": "string"
+    },
+    "key": {
+      "description": "Config key, e.g. github_app",
+      "type": "string"
     },
     "pending_state": {
       "type": "string"
     },
     "pending_state_at": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "configured_by": {
+      "format": "date-time",
       "type": "string"
     },
-    "configured_at": {
-      "type": "string",
-      "format": "date-time"
+    "price_amount": {
+      "description": "Minor units, e.g. 850 = 8.50",
+      "type": "number"
+    },
+    "price_currency": {
+      "type": "string"
     },
     "pro_enabled": {
-      "type": "boolean",
       "default": false,
-      "description": "Handoff Pro limits switched on"
+      "description": "Handoff Pro limits switched on",
+      "type": "boolean"
     },
     "pro_launched_at": {
-      "type": "string",
+      "description": "First time Pro was switched on (founding window starts here)",
       "format": "date-time",
-      "description": "First time Pro was switched on (founding window starts here)"
-    },
-    "stripe_product_id": {
       "type": "string"
     },
-    "stripe_price_id": {
+    "seller_enabled": {
+      "default": false,
+      "description": "Seller licence required to sell or license",
+      "type": "boolean"
+    },
+    "seller_launched_at": {
+      "description": "First time seller licences were switched on (founding window starts here)",
+      "format": "date-time",
+      "type": "string"
+    },
+    "seller_livemode": {
+      "type": "boolean"
+    },
+    "seller_price_amount": {
+      "description": "Minor units, e.g. 5000 = 50.00",
+      "type": "number"
+    },
+    "seller_price_id": {
+      "type": "string"
+    },
+    "seller_product_id": {
       "type": "string"
     },
     "stripe_livemode": {
       "type": "boolean"
     },
-    "price_amount": {
-      "type": "number",
-      "description": "Minor units, e.g. 850 = 8.50"
+    "stripe_price_id": {
+      "type": "string"
     },
-    "price_currency": {
+    "stripe_product_id": {
       "type": "string"
     }
   },
@@ -77,8 +99,9 @@
   ],
   "rls": {
     "create": false,
+    "delete": false,
     "read": false,
-    "update": false,
-    "delete": false
-  }
+    "update": false
+  },
+  "type": "object"
 }

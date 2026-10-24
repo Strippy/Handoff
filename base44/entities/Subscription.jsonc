@@ -1,12 +1,35 @@
 {
+  "description": "Server-only Stripe subscription state per user and plan. No client access; read through the billing function.",
   "name": "Subscription",
-  "type": "object",
-  "description": "Server-only Stripe subscription state per user. No client access; read through the billing function.",
   "properties": {
-    "user_id": {
+    "cancel_at_period_end": {
+      "type": "boolean"
+    },
+    "checked_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "current_period_end": {
+      "format": "date-time",
       "type": "string"
     },
     "email": {
+      "type": "string"
+    },
+    "livemode": {
+      "type": "boolean"
+    },
+    "plan": {
+      "default": "pro",
+      "description": "pro = Handoff Pro, seller = seller licence",
+      "enum": [
+        "pro",
+        "seller"
+      ],
+      "type": "string"
+    },
+    "status": {
+      "description": "Stripe subscription status",
       "type": "string"
     },
     "stripe_customer_id": {
@@ -15,23 +38,8 @@
     "stripe_subscription_id": {
       "type": "string"
     },
-    "status": {
-      "type": "string",
-      "description": "Stripe subscription status"
-    },
-    "current_period_end": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "cancel_at_period_end": {
-      "type": "boolean"
-    },
-    "livemode": {
-      "type": "boolean"
-    },
-    "checked_at": {
-      "type": "string",
-      "format": "date-time"
+    "user_id": {
+      "type": "string"
     }
   },
   "required": [
@@ -39,8 +47,9 @@
   ],
   "rls": {
     "create": false,
+    "delete": false,
     "read": false,
-    "update": false,
-    "delete": false
-  }
+    "update": false
+  },
+  "type": "object"
 }

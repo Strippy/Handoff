@@ -56,11 +56,42 @@ export function remaining(plan, limitKey, usageKey) {
   return Math.max(0, cap - used);
 }
 
+const money = (price, fallback) => {
+  const amount = (price?.amount ?? fallback) / 100;
+  const currency = price?.currency || 'AUD';
+  const symbol = currency === 'AUD' ? 'A$' : currency === 'USD' ? 'US$' : `${currency} `;
+  return `${symbol}${Number.isInteger(amount) ? amount : amount.toFixed(2)}`;
+};
+
 export function proPriceLabel(plan) {
   const amount = (plan?.price?.amount ?? 850) / 100;
   const currency = plan?.price?.currency || 'AUD';
   const symbol = currency === 'AUD' ? 'A$' : currency === 'USD' ? 'US$' : `${currency} `;
   return `${symbol}${amount.toFixed(2)}/month`;
+}
+
+export function licencePriceLabel(plan) {
+  const p = plan?.seller?.price;
+  const n = p?.interval_count ?? 3;
+  return `${money(p, 5000)} every ${n === 1 ? 'month' : `${n} months`}`;
+}
+
+const LICENCE_TYPES = ['full_sale', 'license'];
+/** True when seller licences are on, this deal type needs one, and the viewer doesn't have one. */
+export const needsLicence = (plan, dealType) =>
+  Boolean(plan?.seller?.enabled && !plan?.seller?.licensed && (plan?.seller?.deal_types || LICENCE_TYPES).includes(dealType));
+
+/** Public: is this builder a licensed seller? Resolves to { enabled, licensed }. Cached per page load. */
+const licenceCache = new Map();
+export function sellerLicence(userId) {
+  if (!userId) return Promise.resolve({ enabled: false, licensed: false });
+  if (!licenceCache.has(userId)) {
+    licenceCache.set(
+      userId,
+      call('seller_licence', { user_id: userId }).catch(() => ({ enabled: false, licensed: false }))
+    );
+  }
+  return licenceCache.get(userId);
 }
 
 /** Hours of early access left on a fresh listing for free-plan viewers (0 = open to all). */
@@ -79,20 +110,25 @@ export function earlyAccessCutoff(plan) {
 }
 
 // ---- member actions ----
-export async function startProCheckout() {
-  const { url } = await call('checkout', { origin: window.location.origin });
+export async function startProCheckout(plan = 'pro') {
+  const { url } = await call('checkout', { plan, origin: window.location.origin });
   if (!url) throw new Error('Checkout did not start — try again.');
   window.location.assign(url);
 }
-export const confirmProCheckout = async (sessionId) => publish(await call('confirm', { session_id: sessionId }));
-export const cancelPro = async () => publish(await call('cancel'));
-export const resumePro = async () => publish(await call('resume'));
+export const startLicenceCheckout = () => startProCheckout('seller');
+export const confirmProCheckout = async (sessionId) => {
+  const res = await call('confirm', { session_id: sessionId });
+  publish(res);
+  return res;
+};
+export const cancelPro = async (plan = 'pro') => publish(await call('cancel', { plan }));
+export const resumePro = async (plan = 'pro') => publish(await call('resume', { plan }));
 
 // ---- admin ----
 export const billingAdminStatus = () => call('admin_status');
-export const billingAdminSetupPrice = () => call('admin_setup_price');
-export const billingAdminToggle = async (enabled) => {
-  const res = await call('admin_toggle', { enabled });
+export const billingAdminSetupPrice = (plan = 'pro') => call('admin_setup_price', { plan });
+export const billingAdminToggle = async (enabled, plan = 'pro') => {
+  const res = await call('admin_toggle', { enabled, plan });
   await loadPlan(true);
   return res;
 };
