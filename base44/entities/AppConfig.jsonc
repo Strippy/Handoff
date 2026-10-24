@@ -1,0 +1,58 @@
+{
+  "name": "AppConfig",
+  "type": "object",
+  "description": "Server-only app settings (GitHub App credentials). No client access.",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "Config key, e.g. github_app"
+    },
+    "github_app_id": {
+      "type": "number"
+    },
+    "github_slug": {
+      "type": "string"
+    },
+    "github_client_id": {
+      "type": "string"
+    },
+    "github_client_secret": {
+      "type": "string"
+    },
+    "github_html_url": {
+      "type": "string"
+    },
+    "github_owner": {
+      "type": "string"
+    },
+    "callback_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "pending_state": {
+      "type": "string"
+    },
+    "pending_state_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "configured_by": {
+      "type": "string"
+    },
+    "configured_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "key"
+  ],
+  "rls": {
+    "create": false,
+    "read": false,
+    "update": false,
+    "delete": false
+  }
+}

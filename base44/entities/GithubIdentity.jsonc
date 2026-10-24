@@ -1,0 +1,36 @@
+{
+  "name": "GithubIdentity",
+  "type": "object",
+  "description": "Public, server-verified link between a builder and their GitHub account.",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "github_id": {
+      "type": "number"
+    },
+    "github_login": {
+      "type": "string"
+    },
+    "avatar_url": {
+      "type": "string"
+    },
+    "html_url": {
+      "type": "string"
+    },
+    "connected_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "user_id",
+    "github_login"
+  ],
+  "rls": {
+    "create": false,
+    "read": true,
+    "update": false,
+    "delete": false
+  }
+}

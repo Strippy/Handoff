@@ -1,0 +1,287 @@
+{
+  "name": "Listing",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "tagline": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "web_app",
+        "mobile_app",
+        "saas",
+        "game",
+        "website",
+        "script_tool",
+        "extension",
+        "template",
+        "api",
+        "ai_agent",
+        "other"
+      ]
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "idea",
+        "prototype",
+        "mvp",
+        "live",
+        "earning"
+      ]
+    },
+    "deal_type": {
+      "type": "string",
+      "enum": [
+        "full_sale",
+        "license",
+        "collaborator",
+        "finish_it",
+        "free_adoption"
+      ]
+    },
+    "price": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string",
+      "enum": [
+        "AUD",
+        "USD",
+        "EUR",
+        "GBP"
+      ],
+      "default": "USD"
+    },
+    "open_to_offers": {
+      "type": "boolean",
+      "default": true
+    },
+    "description": {
+      "type": "string"
+    },
+    "ai_tools": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tech_stack": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "what_works": {
+      "type": "string"
+    },
+    "known_issues": {
+      "type": "string"
+    },
+    "included": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "monthly_costs": {
+      "type": "string"
+    },
+    "reported_users": {
+      "type": "string"
+    },
+    "reported_revenue": {
+      "type": "string"
+    },
+    "demo_url": {
+      "type": "string"
+    },
+    "feedback_wanted": {
+      "type": "boolean",
+      "default": false
+    },
+    "cover_image": {
+      "type": "string"
+    },
+    "gallery": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "image",
+              "video"
+            ]
+          },
+          "caption": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "reserved",
+        "sold",
+        "archived"
+      ],
+      "default": "active"
+    },
+    "seller_id": {
+      "type": "string"
+    },
+    "seller_name": {
+      "type": "string"
+    },
+    "seller_avatar": {
+      "type": "string"
+    },
+    "views": {
+      "type": "number",
+      "default": 0
+    },
+    "ownership_attested_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the seller attested they own or may sell this project"
+    },
+    "scan_id": {
+      "type": "string",
+      "description": "Verified ProjectScan attached by the server",
+      "rls": {
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "delete": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "scan_score": {
+      "type": "number",
+      "description": "Handoff readiness score from the attached scan",
+      "rls": {
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "delete": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "scan_grade": {
+      "type": "string",
+      "description": "Grade label from the attached scan",
+      "rls": {
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "delete": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "scan_repo_verified": {
+      "type": "boolean",
+      "description": "Attached scan came from a repo GitHub confirmed the seller owns",
+      "rls": {
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "delete": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "title"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.seller_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.seller_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
