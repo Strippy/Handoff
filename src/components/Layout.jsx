@@ -13,7 +13,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import ThemeToggle from '@/components/ThemeToggle';
-import { Bell, Bookmark, Compass, LogOut, MessageCircle, PlusCircle, Shield, User as UserIcon } from 'lucide-react';
+import { ProPill } from '@/components/ProGate';
+import { usePlan } from '@/lib/billing';
+import { Bell, Bookmark, Compass, Crown, LogOut, MessageCircle, PlusCircle, Shield, User as UserIcon } from 'lucide-react';
 
 const NAV = [
   { to: '/', label: 'Browse', icon: Compass, end: true },
@@ -23,7 +25,9 @@ const NAV = [
 
 export default function Layout() {
   const { user, logout } = useAuth();
+  const plan = usePlan();
   const location = useLocation();
+  const nav = plan?.pro_enabled ? [...NAV, { to: '/pro', label: 'Pro' }] : NAV;
   const [profile, setProfile] = useState(null);
   const [unread, setUnread] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
@@ -61,7 +65,7 @@ export default function Layout() {
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex">
-            {NAV.map((item) => (
+            {nav.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
@@ -105,7 +109,10 @@ export default function Layout() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 rounded-2xl">
                 <div className="px-2 py-1.5">
-                  <p className="truncate text-sm font-semibold">{name}</p>
+                  <p className="flex items-center gap-1.5 truncate text-sm font-semibold">
+                    <span className="truncate">{name}</span>
+                    {plan?.pro_enabled && plan?.is_pro && <ProPill />}
+                  </p>
                   <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
                 </div>
                 <DropdownMenuSeparator />
@@ -122,6 +129,11 @@ export default function Layout() {
                 <DropdownMenuItem asChild className="rounded-xl">
                   <Link to="/deals">
                     <Shield className="mr-2 h-4 w-4" /> My deals
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="rounded-xl">
+                  <Link to="/pro">
+                    <Crown className="mr-2 h-4 w-4" /> Handoff Pro
                   </Link>
                 </DropdownMenuItem>
                 {user?.role === 'admin' && (

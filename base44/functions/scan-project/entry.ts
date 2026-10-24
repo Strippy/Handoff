@@ -725,6 +725,19 @@ Deno.serve(async (req) => {
     } catch { recent = 0; }
     if (recent >= SCANS_PER_DAY) throw new HttpError(429, `You've run ${SCANS_PER_DAY} scans in the last 24 hours — try again tomorrow.`);
 
+    // ---- Handoff Pro free-plan limit (only when Pro is switched on) ----
+    let plan: { pro_enabled?: boolean; is_pro?: boolean; limits?: { scans_per_30d?: number }; usage?: { scans_30d?: number } } | null = null;
+    try {
+      const r = await base44.functions.invoke("billing", { action: "status" });
+      plan = r?.data ?? r;
+    } catch { plan = null; } // billing unavailable → don't block scans
+    if (plan?.pro_enabled && !plan.is_pro) {
+      const cap = plan.limits?.scans_per_30d ?? 3;
+      if ((plan.usage?.scans_30d ?? 0) >= cap) {
+        throw new HttpError(402, `The free plan includes ${cap} scans every 30 days and you've used them. Handoff Pro gives you unlimited scans.`);
+      }
+    }
+
     let bytes: Uint8Array;
     let sourceType: "zip" | "github";
     let sourceLabel: string;

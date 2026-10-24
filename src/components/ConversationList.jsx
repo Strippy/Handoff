@@ -1,6 +1,6 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { asItems, initials, timeAgo } from '@/lib/marketplace';
+import { initials, timeAgo } from '@/lib/marketplace';
 import { MessageCircle } from 'lucide-react';
 
 export const conversationPartner = (conversation, userId) =>

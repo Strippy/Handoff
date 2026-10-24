@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import EmptyState from '@/components/EmptyState';
 import StagePill from '@/components/StagePill';
 import GithubAdminCard from '@/components/GithubAdminCard';
+import BillingAdminCard from '@/components/BillingAdminCard';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Shield, ShieldAlert } from 'lucide-react';
 
@@ -122,6 +123,7 @@ export default function Admin() {
         ))}
       </div>
 
+      <BillingAdminCard />
       <GithubAdminCard />
 
       <Tabs defaultValue="reports">

@@ -21,6 +21,7 @@ import Onboarding from '@/pages/Onboarding';
 import Admin from '@/pages/Admin';
 import GithubCallback from '@/pages/GithubCallback';
 import GithubSetup from '@/pages/GithubSetup';
+import Pro from '@/pages/Pro';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
@@ -74,6 +75,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin" element={<Admin />} />
           <Route path="/github/callback" element={<GithubCallback />} />
           <Route path="/github/setup" element={<GithubSetup />} />
+          <Route path="/pro" element={<Pro />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

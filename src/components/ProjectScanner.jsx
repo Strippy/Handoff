@@ -1,8 +1,11 @@
 import React, { useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import ScanReport from '@/components/ScanReport';
 import GithubRepoPicker from '@/components/GithubRepoPicker';
+import ProGate from '@/components/ProGate';
+import { loadPlan, onFreePlan, remaining, usePlan } from '@/lib/billing';
 import { FileArchive, GitBranch, Loader2, Lock, RefreshCw, ScanSearch, UploadCloud, Wand2 } from 'lucide-react';
 
 const MAX_ZIP_MB = 50;
@@ -22,6 +25,9 @@ export default function ProjectScanner({ scan, privateFindings, onScanned, onApp
   const [error, setError] = useState('');
   const [dragging, setDragging] = useState(false);
   const [applied, setApplied] = useState(false);
+  const plan = usePlan();
+  const scansLeft = remaining(plan, 'scans_per_30d', 'scans_30d');
+  const outOfScans = scansLeft <= 0;
   const busy = phase !== 'idle';
 
   const runScan = async (payload) => {
@@ -35,6 +41,7 @@ export default function ProjectScanner({ scan, privateFindings, onScanned, onApp
     } catch (err) {
       setError(errorText(err));
     }
+    if (onFreePlan(plan)) loadPlan(true);
     setPhase('idle');
   };
 
@@ -95,8 +102,22 @@ export default function ProjectScanner({ scan, privateFindings, onScanned, onApp
         </div>
       </div>
 
-      {!scan && (
+      {!scan && outOfScans && (
+        <ProGate
+          compact
+          title={`You’ve used your ${plan?.limits?.scans_per_30d ?? 3} free scans for the last 30 days`}
+          body="Go Pro for unlimited scans — or fill the listing in by hand below. You can add a scan later."
+        />
+      )}
+
+      {!scan && !outOfScans && (
         <>
+          {onFreePlan(plan) && (
+            <p className="text-xs font-medium text-muted-foreground">
+              {scansLeft} of {plan.limits?.scans_per_30d ?? 3} free scans left (rolling 30 days) ·{' '}
+              <Link to="/pro" className="text-primary underline-offset-2 hover:underline">unlimited with Pro</Link>
+            </p>
+          )}
           <div className="inline-flex rounded-full border border-border/70 bg-secondary/60 p-1 text-sm">
             {[
               { key: 'zip', label: 'Upload a .zip', icon: FileArchive },

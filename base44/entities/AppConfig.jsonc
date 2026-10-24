@@ -1,7 +1,7 @@
 {
   "name": "AppConfig",
   "type": "object",
-  "description": "Server-only app settings (GitHub App credentials). No client access.",
+  "description": "Server-only app settings (GitHub App credentials, billing). No client access.",
   "properties": {
     "key": {
       "type": "string",
@@ -44,6 +44,32 @@
     "configured_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "pro_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Handoff Pro limits switched on"
+    },
+    "pro_launched_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "First time Pro was switched on (founding window starts here)"
+    },
+    "stripe_product_id": {
+      "type": "string"
+    },
+    "stripe_price_id": {
+      "type": "string"
+    },
+    "stripe_livemode": {
+      "type": "boolean"
+    },
+    "price_amount": {
+      "type": "number",
+      "description": "Minor units, e.g. 850 = 8.50"
+    },
+    "price_currency": {
+      "type": "string"
     }
   },
   "required": [

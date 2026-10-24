@@ -13,6 +13,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
+import ProGate from '@/components/ProGate';
+import { loadPlan, onFreePlan, remaining, usePlan } from '@/lib/billing';
 
 export default function OfferDialog({ open, onOpenChange, listing, user, profile, parentOffer, onCreated }) {
   const [amount, setAmount] = useState(parentOffer?.amount ? String(parentOffer.amount) : '');
@@ -21,7 +23,10 @@ export default function OfferDialog({ open, onOpenChange, listing, user, profile
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
 
+  const plan = usePlan();
   const iAmSeller = listing.seller_id === user?.id;
+  // Free plan caps how many offers a buyer has open at once. Counters on an existing offer don't count.
+  const offerCapHit = !iAmSeller && !parentOffer && remaining(plan, 'open_offers', 'open_offers') <= 0;
   const nonMonetary = ['collaborator', 'finish_it'].includes(listing.deal_type);
   const myName = profile?.display_name || user?.full_name || 'Builder';
   const amountNum = Number(amount);
@@ -54,6 +59,7 @@ export default function OfferDialog({ open, onOpenChange, listing, user, profile
     if (parentOffer?.id) {
       await base44.entities.Offer.update(parentOffer.id, { status: 'countered' });
     }
+    if (onFreePlan(plan)) loadPlan(true);
     setSending(false);
     onOpenChange(false);
     setAmount('');
@@ -74,6 +80,13 @@ export default function OfferDialog({ open, onOpenChange, listing, user, profile
           </DialogDescription>
         </DialogHeader>
 
+        {offerCapHit ? (
+          <ProGate
+            compact
+            title={`You have ${plan?.limits?.open_offers ?? 3} offers waiting on replies`}
+            body="That’s the free-plan limit. Withdraw one, wait for a reply, or go Pro for unlimited open offers. You can still message the seller."
+          />
+        ) : (
         <div className="space-y-4">
           <div className="grid grid-cols-[1fr_5rem] gap-3">
             <div className="space-y-2">
@@ -124,12 +137,13 @@ export default function OfferDialog({ open, onOpenChange, listing, user, profile
 
           {error && <p className="text-sm font-medium text-destructive">{error}</p>}
         </div>
+        )}
 
         <DialogFooter className="gap-2">
           <Button variant="ghost" className="rounded-full" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button className="rounded-full px-6" disabled={sending} onClick={send}>
+          <Button className="rounded-full px-6" disabled={sending || offerCapHit} onClick={send}>
             {sending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {parentOffer ? 'Send counter' : 'Send offer'}
           </Button>

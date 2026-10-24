@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -7,6 +7,8 @@ import ListingCard from '@/components/ListingCard';
 import ListingFilters from '@/components/ListingFilters';
 import EmptyState from '@/components/EmptyState';
 import { Button } from '@/components/ui/button';
+import ProGate from '@/components/ProGate';
+import { earlyAccessCutoff, usePlan } from '@/lib/billing';
 import { Compass, Loader2, PlusCircle, Rocket } from 'lucide-react';
 
 const PAGE_SIZE = 12;
@@ -23,7 +25,7 @@ const EMPTY_FILTERS = {
   scanned: false,
 };
 
-const buildQuery = (filters) => {
+const buildQuery = (filters, early) => {
   const query = { status: 'active' };
   if (filters.stage !== 'all') query.stage = filters.stage;
   if (filters.deal_type !== 'all') query.deal_type = filters.deal_type;
@@ -41,11 +43,28 @@ const buildQuery = (filters) => {
       { seller_name: { $regex: text, $options: 'i' } },
     ];
   }
+  // Free plan (only while Pro is on): brand-new listings stay Pro-only for a while, except your own.
+  if (early?.cutoff) {
+    const opened = [{ created_date: { $lte: early.cutoff } }, { seller_id: early.userId }];
+    if (query.$or) {
+      query.$and = [{ $or: query.$or }, { $or: opened }];
+      delete query.$or;
+    } else {
+      query.$or = opened;
+    }
+  }
   return query;
 };
 
 export default function Home() {
   const { user } = useAuth();
+  const plan = usePlan();
+  // { cutoff, userId } on the free plan while Pro is on; null otherwise
+  const early = useMemo(() => {
+    const cutoff = earlyAccessCutoff(plan);
+    return cutoff ? { cutoff, userId: user?.id || '' } : null;
+  }, [plan, user?.id]);
+  const [earlyCount, setEarlyCount] = useState(0);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [listings, setListings] = useState([]);
   const [cursor, setCursor] = useState(null);
@@ -77,10 +96,21 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    if (!early) {
+      setEarlyCount(0);
+      return;
+    }
+    base44.entities.Listing.count({ status: 'active', created_date: { $gt: early.cutoff }, seller_id: { $ne: early.userId } })
+      .then((n) => setEarlyCount(n || 0))
+      .catch(() => setEarlyCount(0));
+  }, [early]);
+
+  useEffect(() => {
+    if (!plan) return undefined;
     let active = true;
     const timer = setTimeout(async () => {
       setLoading(true);
-      const res = await base44.entities.Listing.filter(buildQuery(filters), {
+      const res = await base44.entities.Listing.filter(buildQuery(filters, early), {
         sort: filters.sort,
         limit: PAGE_SIZE,
       });
@@ -94,12 +124,12 @@ export default function Home() {
       active = false;
       clearTimeout(timer);
     };
-  }, [filters]);
+  }, [filters, early, plan]);
 
   const loadMore = async () => {
     if (!cursor) return;
     setLoadingMore(true);
-    const res = await base44.entities.Listing.filter(buildQuery(filters), {
+    const res = await base44.entities.Listing.filter(buildQuery(filters, early), {
       sort: filters.sort,
       limit: PAGE_SIZE,
       cursor,
@@ -159,6 +189,13 @@ export default function Home() {
             <Link to="/welcome">Finish my profile</Link>
           </Button>
         </div>
+      )}
+
+      {earlyCount > 0 && (
+        <ProGate
+          title={`${earlyCount} new project${earlyCount === 1 ? ' is' : 's are'} in Pro early access`}
+          body={`They open to everyone ${plan?.limits?.early_access_hours ?? 48} hours after listing. Pro builders see them now.`}
+        />
       )}
 
       <section className="space-y-5">

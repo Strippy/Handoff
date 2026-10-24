@@ -23,15 +23,19 @@ import ListingSidebar from '@/components/ListingSidebar';
 import ListingOffersPanel from '@/components/ListingOffersPanel';
 import ListingReviewsPanel from '@/components/ListingReviewsPanel';
 import ScanReport from '@/components/ScanReport';
+import ListingInsights from '@/components/ListingInsights';
+import ProGate from '@/components/ProGate';
+import { earlyAccessLeft, usePlan } from '@/lib/billing';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { Eye, Loader2, Share2, Sparkles } from 'lucide-react';
+import { Crown, Eye, Loader2, Share2, Sparkles } from 'lucide-react';
 
 export default function ListingDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const plan = usePlan();
 
   const [loading, setLoading] = useState(true);
   const [listing, setListing] = useState(null);
@@ -289,7 +293,7 @@ export default function ListingDetail() {
     }
   };
 
-  if (loading) {
+  if (loading || !plan) {
     return (
       <div className="flex justify-center py-24 text-muted-foreground">
         <Loader2 className="h-6 w-6 animate-spin" />
@@ -314,6 +318,33 @@ export default function ListingDetail() {
 
   const stage = stageMeta(listing.stage);
   const offerable = !iAmSeller && listing.status !== 'sold' && listing.status !== 'archived';
+  const earlyHours = iAmSeller || activeDeal ? 0 : earlyAccessLeft(plan, listing);
+
+  if (earlyHours > 0) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-6">
+        <Link to="/" className="text-sm font-medium text-muted-foreground hover:text-foreground">
+          ← Back to browse
+        </Link>
+        <div className="card-soft space-y-3 p-6 text-center sm:p-8">
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-200">
+            <Crown className="h-6 w-6" />
+          </span>
+          <div className="flex flex-wrap justify-center gap-2">
+            <StagePill stage={listing.stage} />
+            <DealPill dealType={listing.deal_type} />
+          </div>
+          <h1 className="font-display text-2xl font-bold tracking-tight">{listing.title}</h1>
+          {listing.tagline && <p className="text-muted-foreground">{listing.tagline}</p>}
+          <p className="text-sm text-muted-foreground">
+            Listed {timeAgo(listing.created_date)} — Pro builders get the first look. It opens to everyone in about{' '}
+            {earlyHours} hour{earlyHours === 1 ? '' : 's'}.
+          </p>
+        </div>
+        <ProGate title="See new projects the moment they’re listed" body={`Pro builders get a ${plan.limits?.early_access_hours ?? 48}-hour head start on every new listing.`} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -410,6 +441,10 @@ export default function ListingDetail() {
                 </Button>
               </div>
             )
+          )}
+
+          {iAmSeller && (
+            <ListingInsights listing={listing} offers={offers} questions={questions} reactions={reactions} />
           )}
 
           <ListingOffersPanel

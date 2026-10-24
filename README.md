@@ -20,8 +20,9 @@ Handoff is built on [Base44](https://base44.com): a React + Vite frontend, Base4
 | **Offers & Deal Room** | Structured offers (accept / decline / counter / withdraw) with a nudge on offers under half the asking price. An accepted offer opens a Deal Room checklist: Escrow.com → code transfer → assets → buyer confirms → sold. Reviews unlock only after a completed deal. |
 | **Community** | Public Q&A on listings, reactions (🔥 Love it, 💡 Great idea, 🛠️ I could finish this), builder profiles, follows, saves, notifications, and a Founding Builder badge for the first 100 builders. |
 | **Trust & safety** | Builder's Code at onboarding, ownership attestation on every listing, report/block, and an admin moderation desk. |
+| **Handoff Pro** | Optional A$8.50/month Stripe subscription. **Off until an admin switches it on** — while off, nothing is limited. See [Handoff Pro](#handoff-pro). |
 
-Handoff never holds money: payments go through an Escrow.com transaction linked from the Deal Room.
+Handoff never holds money for project sales: payments go through an Escrow.com transaction linked from the Deal Room. Handoff takes no cut of sales.
 
 ---
 
@@ -37,16 +38,19 @@ Handoff never holds money: payments go through an Escrow.com transaction linked 
 ```
 src/
   pages/        Home, ListingDetail, ListingEditor (sell/edit), Messages, Deals, DealRoom,
-                Saved, Notifications, Profile, Onboarding, Admin, GithubCallback, GithubSetup
+                Saved, Notifications, Profile, Onboarding, Admin, Pro, GithubCallback, GithubSetup
   components/   ListingForm, ProjectScanner, ScanReport, GithubRepoPicker, MessageThread,
-                OfferDialog, DealChecklist, … and ui/ (shadcn components)
-  lib/          marketplace.js (shared constants + helpers), github.js (GitHub flow helpers)
+                OfferDialog, DealChecklist, ProGate, ListingInsights, BillingAdminCard,
+                … and ui/ (shadcn components)
+  lib/          marketplace.js (shared constants + helpers), github.js (GitHub flow helpers),
+                billing.js (plan state + Pro helpers)
 base44/
   entities/     Data model + row-level security (one .jsonc per entity)
   functions/
     scan-project/   Project scanner + attaching a scan to a listing
     github/         GitHub App setup, sign-in, repo list, disconnect
     listing-sync/   View counts and deal-driven listing status (server-side)
+    billing/        Handoff Pro: plan status, Stripe checkout, cancel/resume, admin switch
 ```
 
 ---
@@ -100,19 +104,48 @@ GitHub sign-in uses a GitHub App with **Contents: read** and **Metadata: read** 
 
 Callback routes: `/github/callback` (sign-in and repo selection) and `/github/setup` (admin setup).
 
+## Handoff Pro
+
+An optional monthly subscription (A$8.50/month) handled by `base44/functions/billing` and Stripe. **It ships switched off.** While it's off, every feature is free and unlimited.
+
+**Switching it on (admin):** Admin → *Handoff Pro* card → create the price in Stripe → flip the switch. The first time it's switched on, the founding window starts.
+
+| | Free (only while Pro is on) | Pro |
+| --- | --- | --- |
+| Browse, message, Q&A, saves, deal rooms | ✓ | ✓ |
+| Active listings at once | 2 | Unlimited |
+| Code scans | 3 per rolling 30 days | Unlimited (12/day fair use) |
+| Open offers at once | 3 | Unlimited |
+| New listings | Visible after 48 hours | Immediately |
+| Listing insights (saves, chats, offers, questions) | — | ✓ |
+
+**Who gets Pro:**
+- Admins, always.
+- Paying subscribers: Stripe status `active`, `trialing` or `past_due`, until the end of the paid period.
+- Founding builders: the first 100 builder profiles get Pro free for 12 months from the first switch-on. This is worked out on the server from profile creation order and can't be self-claimed.
+
+**How billing works:**
+- *Get Pro* creates a Stripe Checkout session (subscription mode). On return, `/pro?session_id=…` is confirmed server-side: the session must belong to the signed-in user.
+- No webhooks. Subscription state is re-checked against Stripe every 6 hours, and straight away once a paid period ends.
+- Cancel and resume set `cancel_at_period_end`, so people keep Pro until the end of the month they paid for.
+- Stripe keys stay in function secrets (`STRIPE_SECRET_KEY`). Subscription records live in the server-only `Subscription` table.
+- While Stripe is in test mode, admins can run a checkout with test card 4242 4242 4242 4242 before launch.
+
+**Enforcement:** the scan limit is enforced on the server (`scan-project` asks `billing` for the plan). The listing, offer, early-access and insights limits are enforced in the UI.
+
 ---
 
 ## Security model
 
 - **Row-level security on every entity.** Messages, conversations, offers, deals and notifications are readable only by the people involved. Listings and profiles are editable only by their owner or an admin. Reports are admin-only.
-- **Server-only tables:** `AppConfig` (GitHub App credentials) and `GithubToken` deny all client access. `GithubIdentity` (the verified badge) is public to read but writable only by the server.
+- **Server-only tables:** `AppConfig` (GitHub App credentials, Pro settings), `GithubToken` and `Subscription` deny all client access. `GithubIdentity` (the verified badge) is public to read but writable only by the server.
 - **Field-level security** on `Listing.scan_id`, `scan_score`, `scan_grade` and `scan_repo_verified`.
 - **Private findings:** secret-scan file paths are readable only by the scan's owner.
 - **Uploaded zips** go to private storage and are read only by the scanner.
 
 ## Data model
 
-`Listing`, `BuilderProfile`, `Conversation`, `Message`, `Offer`, `Deal`, `Review`, `Question`, `Reaction`, `SavedListing`, `Follow`, `Notification`, `Report`, `ProjectScan`, `GithubIdentity`, `GithubToken`, `AppConfig`, plus Base44's built-in `User`. Schemas and access rules live in `base44/entities/`.
+`Listing`, `BuilderProfile`, `Conversation`, `Message`, `Offer`, `Deal`, `Review`, `Question`, `Reaction`, `SavedListing`, `Follow`, `Notification`, `Report`, `ProjectScan`, `GithubIdentity`, `GithubToken`, `Subscription`, `AppConfig`, plus Base44's built-in `User`. Schemas and access rules live in `base44/entities/`.
 
 ---
 
