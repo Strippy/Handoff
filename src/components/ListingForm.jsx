@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -117,7 +117,7 @@ export default function ListingForm({ initial, user, profile, onSaved }) {
   useEffect(() => {
     if (!initial?.scan_id) return;
     let active = true;
-    base44.entities.ProjectScan.get(initial.scan_id)
+    api.entities.ProjectScan.get(initial.scan_id)
       .then((found) => {
         if (active && found && found.owner_id === user?.id) {
           setScan(found);
@@ -177,7 +177,7 @@ export default function ListingForm({ initial, user, profile, onSaved }) {
     // The server validates every field, sets the seller and status, and checks the licence and plan limits.
     let saved;
     try {
-      const res = await base44.functions.invoke('listing-sync', {
+      const res = await api.functions.invoke('listing-sync', {
         action: 'save',
         listing_id: initial?.id || undefined,
         attested: true,
@@ -192,7 +192,7 @@ export default function ListingForm({ initial, user, profile, onSaved }) {
     }
     if (scan?.id && saved?.id && saved.scan_id !== scan.id) {
       try {
-        await base44.functions.invoke('scan-project', { action: 'attach', listing_id: saved.id, scan_id: scan.id });
+        await api.functions.invoke('scan-project', { action: 'attach', listing_id: saved.id, scan_id: scan.id });
         saved = { ...saved, scan_id: scan.id, scan_score: scan.score, scan_grade: scan.grade };
       } catch {
         // listing is saved; the scan can be attached on the next save

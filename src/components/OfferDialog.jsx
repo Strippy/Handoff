@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,7 +40,7 @@ export default function OfferDialog({ open, onOpenChange, listing, user, profile
     }
     setSending(true);
     setError('');
-    const created = await base44.entities.Offer.create({
+    const created = await api.entities.Offer.create({
       listing_id: listing.id,
       listing_title: listing.title,
       listing_cover: listing.cover_image || '',
@@ -57,7 +57,7 @@ export default function OfferDialog({ open, onOpenChange, listing, user, profile
       parent_offer_id: parentOffer?.id || '',
     });
     if (parentOffer?.id) {
-      await base44.entities.Offer.update(parentOffer.id, { status: 'countered' });
+      await api.entities.Offer.update(parentOffer.id, { status: 'countered' });
     }
     if (onFreePlan(plan)) loadPlan(true);
     setSending(false);

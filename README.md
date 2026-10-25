@@ -2,9 +2,7 @@
 
 **A friendly marketplace where vibe coders and developers buy, sell, license and team up on software projects** — from a rough idea or half-finished prototype to an app that's already earning.
 
-Live: **https://build-swap-ship.base44.app**
-
-Handoff is built on [Base44](https://base44.com): a React + Vite frontend, Base44 entities (database with row-level security) and Deno backend functions. There is no seeded or sample data anywhere — every listing, number and review on the site is real.
+Handoff is a React + Vite app on [Vercel](https://vercel.com), with [Supabase](https://supabase.com) for the database (Postgres with row-level security), sign-in, file storage and live chat, and a small set of server functions for payments, the Deal Room, the code scanner and GitHub. There is no seeded or sample data anywhere — every listing, number and review on the site is real.
 
 ---
 
@@ -32,8 +30,9 @@ Handoff never holds money for project sales: payments go through an Escrow.com t
 ## Tech stack
 
 - **Frontend:** React 18, Vite, React Router 7, Tailwind CSS 3, shadcn/ui (Radix), TanStack Query, lucide-react
-- **Backend:** Base44 entities (`base44/entities/*.jsonc`) and Deno backend functions (`base44/functions/*/entry.ts`), via `@base44/sdk`
-- **AI:** Base44 `InvokeLLM` (server-side, for the scanner's summary and listing copy only)
+- **Database, auth, storage, realtime:** Supabase (Postgres 17, row-level security, Supabase Auth with email + Google, Storage, Realtime) via `@supabase/supabase-js`
+- **Server functions:** TypeScript on Vercel Functions (Node.js), all behind `/api/<name>`
+- **AI:** Claude via the Anthropic API (server-side, for the scanner's summary and listing copy only)
 - **Zip handling:** `fflate` (in the scan function)
 
 ## Project layout
@@ -41,27 +40,34 @@ Handoff never holds money for project sales: payments go through an Escrow.com t
 ```
 src/
   pages/        Home, ListingDetail, ListingEditor (sell/edit), Messages, Deals, DealRoom,
-                Saved, Notifications, Profile, Onboarding, Admin, Pro, GithubCallback, GithubSetup
+                Saved, Notifications, Profile, Onboarding, Admin, Pro, GithubCallback, GithubSetup,
+                Login, Register, ForgotPassword, ResetPassword
   components/   ListingForm, ProjectScanner, ScanReport, GithubRepoPicker, MessageThread,
                 OfferDialog, DealChecklist, ProGate, ListingInsights, BillingAdminCard,
                 … and ui/ (shadcn components)
+  api/          client.js (the app's one connection: entities, auth, functions, uploads),
+                entities.js (data layer shared with the server), schema.js (tables + columns)
   lib/          marketplace.js (shared constants + helpers), github.js (GitHub flow helpers),
-                billing.js (plan state + Pro helpers)
-base44/
-  entities/     Data model + row-level security (one .jsonc per entity)
+                billing.js (plan state + Pro helpers), AuthContext.jsx
+api/[fn].ts     Vercel entry point for /api/<name>
+server/
+  compat.ts       Request context: current user, service-role data access, signed file links, Claude
+  router.ts       /api/<name> → function
   functions/
-    scan-project/   Project scanner + attaching a scan to a listing
-    github/         GitHub App setup, sign-in, repo list, disconnect
-    listing-sync/   The only way to create a listing or change its deal type/status (licence + plan checks), view counts
-    deal-room/      Deal state machine: accept offer, terms, escrow, receipt, problems, cancel, complete, reviews
-    billing/        Pro + seller licence: plan status, Stripe checkout, cancel/resume, admin switches
+    scan-project.ts   Project scanner + attaching a scan to a listing + recording deal deliveries
+    github.ts         GitHub App setup, sign-in, repo list, disconnect
+    listing-sync.ts   The only way to create a listing or change its deal type/status (licence + plan checks), view counts
+    deal-room.ts      Deal state machine: accept offer, terms, escrow, receipt, problems, cancel, complete, reviews
+    billing.ts        Pro + seller licence: plan status, Stripe checkout, cancel/resume, admin switches
+supabase/migrations/  Tables, row-level security, guard triggers, storage buckets
+tests/                Database security tests and end-to-end API tests (see Running locally)
 ```
 
 ---
 
 ## Project scanner
 
-`base44/functions/scan-project` takes a private `.zip` upload, a public GitHub link, or (when GitHub is connected) one of the builder's shared repos, and returns a report.
+`server/functions/scan-project.ts` takes a private `.zip` upload, a public GitHub link, or (when GitHub is connected) one of the builder's shared repos, and returns a report.
 
 **The score is deterministic** — computed only from what's in the files. The AI writes the summary and listing copy; it never changes the number.
 
@@ -117,7 +123,7 @@ Callback routes: `/github/callback` (sign-in and repo selection) and `/github/se
 
 ## Handoff Pro
 
-An optional monthly subscription (A$8.50/month) handled by `base44/functions/billing` and Stripe. **It ships switched off.** While it's off, every feature is free and unlimited.
+An optional monthly subscription (A$8.50/month) handled by `server/functions/billing.ts` and Stripe. **It ships switched off.** While it's off, every feature is free and unlimited.
 
 **Switching it on (admin):** Admin → *Handoff Pro* card → create the price in Stripe → flip the switch. The first time it's switched on, the founding window starts.
 
@@ -145,7 +151,7 @@ An optional monthly subscription (A$8.50/month) handled by `base44/functions/bil
 - *Get Pro* creates a Stripe Checkout session (subscription mode). On return, `/pro?session_id=…` is confirmed server-side: the session must belong to the signed-in user.
 - No webhooks. Subscription state is re-checked against Stripe every 6 hours, and straight away once a paid period ends.
 - Cancel and resume set `cancel_at_period_end`, so people keep Pro until the end of the month they paid for.
-- Stripe keys stay in function secrets (`STRIPE_SECRET_KEY`). Subscription records live in the server-only `Subscription` table.
+- Stripe keys stay in server environment variables (`STRIPE_SECRET_KEY`). Subscription records live in the server-only `subscription` table.
 - While Stripe is in test mode, admins can run a checkout with test card 4242 4242 4242 4242 before launch.
 
 **Enforcement:** the scan limit and the active-listing limit are enforced on the server (`scan-project` and `listing-sync` ask `billing` for the plan). The offer, early-access and insights limits are enforced in the UI.
@@ -183,42 +189,49 @@ Once a buyer has the code, "it doesn't work, refund me" is the main way a seller
 
 ## Security model
 
-- **Row-level security on every entity.** Messages, conversations, offers, deals and notifications are readable only by the people involved. Listings and profiles are editable only by their owner or an admin. Reports are admin-only.
-- **Server-only writes:** `Deal` and `Review` can only be written by functions. Listings can only be created through `listing-sync`, and their `status`, `deal_type`, seller fields, `views` and attestation date are field-locked. Offer amounts and parties can't be edited after an offer is sent, and offers can only be created by one of the two parties.
-- **Server-only tables:** `AppConfig` (GitHub App credentials, plan settings), `GithubToken` and `Subscription` deny all client access. `GithubIdentity` (the verified badge) is public to read but writable only by the server.
-- **Field-level security** on `Listing.scan_id`, `scan_score`, `scan_grade` and `scan_repo_verified`.
-- **Private findings:** secret-scan file paths are readable only by the scan's owner.
-- **Uploaded zips** go to private storage and are read only by the scanner.
+- **Row-level security on every table.** The browser talks to Postgres directly with the signed-in user's token, so access is decided by the database, not the app. Messages, conversations, offers, deals and notifications are readable only by the people involved. Listings and profiles are editable only by their owner or an admin. Reports are admin-only.
+- **Server-only writes.** Deals, reviews and project scans can only be written by the server functions (service role). Listings can only be created through `listing-sync`.
+- **Guard triggers** stop users changing what isn't theirs to change: a listing's `status`, `deal_type`, seller fields, `views`, attestation date and scan score; an offer's amount, parties and listing (only *decline*, *withdraw* or *counter* a pending offer — accepting happens in the Deal Room); a conversation's participants; a message's text (only *read* can change); a user's role; the Founding Builder badge (set by the database for the first 100 profiles). `id`, `created_by_id` and dates are always set by the database.
+- **You can only act as yourself.** Messages must be sent as you, inside a conversation you're in, to the other person in it. Offers must name the listing's real seller. Follows, saves, reactions, questions and reports are filed under your own id.
+- **Server-only tables:** `app_config` (GitHub App credentials, plan settings), `github_token` and `subscription` have no browser access at all. `github_identity` (the verified badge) is public to read but written only by the server.
+- **Private findings:** secret-scan file paths live in `project_scan_private`, readable only by the scan's owner.
+- **Files.** Everyone uploads into a folder named after their own user id. Project zips go to a private bucket; the server checks the zip belongs to the person asking before scanning it, and only hands out 10-minute signed download links.
+- **Notifications** can only link inside the app.
+- **Tests.** `tests/db/rls.test.sql` checks 76 of these rules as real signed-in users; `tests/api/` runs the full listing → scan → offer → Deal Room → review flow and the zip-bomb guards against a real Postgres + PostgREST.
 
 ## Data model
 
-`Listing`, `BuilderProfile`, `Conversation`, `Message`, `Offer`, `Deal`, `Review`, `Question`, `Reaction`, `SavedListing`, `Follow`, `Notification`, `Report`, `ProjectScan`, `GithubIdentity`, `GithubToken`, `Subscription`, `AppConfig`, plus Base44's built-in `User`. Schemas and access rules live in `base44/entities/`.
+`listing`, `builder_profile`, `conversation`, `message`, `offer`, `deal`, `review`, `question`, `reaction`, `saved_listing`, `follow`, `notification`, `report`, `project_scan`, `project_scan_private`, `github_identity`, `github_token`, `subscription`, `app_config` and `users` (one row per Supabase Auth account, with `role`). Schema and access rules live in `supabase/migrations/`. In code, tables are used as `api.entities.Listing`, `api.entities.BuilderProfile`, and so on.
 
 ---
 
 ## Running locally
 
-You'll need Node.js, the Base44 CLI (`npm install -g base44@latest`) and [Deno](https://docs.deno.com/runtime/getting_started/installation/).
+You'll need Node.js 22+ and a Supabase project (the free plan is fine for development).
 
 ```bash
 npm install
-base44 login   # one-time per machine
-base44 link    # one-time per clone (app id: 6adbdeb30b6f86a5318d9634)
-base44 dev     # local backend + frontend together
+cp .env.example .env.local     # fill in your Supabase URL and keys
+npm run dev:api                # server functions on :8787
+npm run dev                    # the app on :5173 (proxies /api to :8787)
 ```
 
-Open the URL `base44 dev` prints (usually `http://localhost:5173`).
+Database: apply `supabase/migrations/` to your project in order (Supabase CLI: `supabase link` then `supabase db push`, or paste them into the SQL editor). Make yourself an admin once you've signed up: `update public.users set role = 'admin' where email = 'you@example.com';`
 
-- **Local data is temporary:** `base44 dev` runs entities, functions and auth locally, and entity data is in-memory only.
-- **Hosted features:** Core integrations (uploads, `InvokeLLM`) and OAuth are forwarded to the hosted app.
-- **Don't run `npm run dev` on its own:** it serves the UI with no backend behind it.
-- **Production data mode:** `base44 dev --remote` runs the frontend against the live backend, and writes go to production data.
+Checks: `npm run lint`, `npm run typecheck`, `npm run build`.
 
-Checks: `npm run lint`, `npm run build`.
+Tests need a local Postgres 15+ and a [PostgREST](https://postgrest.org) binary (no Supabase account needed):
 
-## Source of truth & publishing
+```bash
+npm run test:db                                   # row-level security suite
+POSTGREST_BIN=/path/to/postgrest npm run test:api  # data layer + end-to-end API flow
+```
 
-The live app is built and deployed from the Base44 project (app id `6adbdeb30b6f86a5318d9634`). **This repo is a snapshot of it and is not auto-synced** — changes made in Base44 need to be pushed here again, and changes made here need to be published to Base44 before they go live. Keep one place as the source of truth to avoid the two drifting apart.
+## Deploying
+
+- **Supabase:** apply the migrations. In *Authentication → URL configuration* set the Site URL to your domain and add it (plus Vercel preview URLs if you use them) to the redirect URLs. Turn on the Google provider if you want Google sign-in. Optional: put `{{ .Token }}` in the *Confirm signup* email template so new users also get a 6-digit code.
+- **Vercel:** import the repo (framework: Vite). Set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `APP_URL` (your domain), and `STRIPE_SECRET_KEY` / `ANTHROPIC_API_KEY` when you use payments and AI summaries. Handoff takes payments, so it needs Vercel's Pro plan — Hobby is for non-commercial use.
+- **GitHub sign-in:** after deploying, an admin runs *Admin → Set up GitHub sign-in* on the live domain.
 
 ## License
 

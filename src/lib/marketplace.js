@@ -1,4 +1,4 @@
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 
 export const STAGES = [
   { value: 'idea', label: 'Idea', hint: 'A direction, not a build yet', pill: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-500/15 dark:text-amber-200 dark:border-amber-500/30' },
@@ -172,7 +172,7 @@ export const looksLikeOffPlatformPayment = (text) => Boolean(text && OFF_PLATFOR
 
 export const pushNotification = async (payload) => {
   try {
-    await base44.entities.Notification.create(payload);
+    await api.entities.Notification.create(payload);
   } catch (error) {
     // notifications are a side effect; never block the action that triggered them
   }
@@ -180,16 +180,16 @@ export const pushNotification = async (payload) => {
 
 export const loadMyProfile = async (userId) => {
   if (!userId) return null;
-  const res = await base44.entities.BuilderProfile.filter({ user_id: userId }, { limit: 1 });
+  const res = await api.entities.BuilderProfile.filter({ user_id: userId }, { limit: 1 });
   return asItems(res)[0] || null;
 };
 
 export const findOrCreateConversation = async ({ me, otherId, listing, myName, myAvatar }) => {
   const key = participantKey(me, otherId);
-  const existing = await base44.entities.Conversation.filter({ participant_key: key, listing_id: listing?.id || '' }, { limit: 1 });
+  const existing = await api.entities.Conversation.filter({ participant_key: key, listing_id: listing?.id || '' }, { limit: 1 });
   const found = asItems(existing)[0];
   if (found) return found;
-  return base44.entities.Conversation.create({
+  return api.entities.Conversation.create({
     participant_key: key,
     participants: [me, otherId],
     // explicit fields so row-level security can match either party with plain equality

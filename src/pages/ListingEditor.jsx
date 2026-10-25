@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { loadMyProfile } from '@/lib/marketplace';
 import ListingForm from '@/components/ListingForm';
@@ -30,7 +30,7 @@ export default function ListingEditor() {
       if (!active) return;
       setProfile(p);
       if (id) {
-        const found = await base44.entities.Listing.get(id);
+        const found = await api.entities.Listing.get(id);
         if (!active) return;
         if (found.seller_id !== user.id) {
           setDenied(true);

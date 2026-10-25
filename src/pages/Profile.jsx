@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { asItems, initials, loadMyProfile, pushNotification } from '@/lib/marketplace';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -32,7 +32,7 @@ export default function Profile() {
 
   // Server-verified GitHub link (only the server can write these).
   const loadGithub = () =>
-    base44.entities.GithubIdentity.filter({ user_id: targetId }, { limit: 1 })
+    api.entities.GithubIdentity.filter({ user_id: targetId }, { limit: 1 })
       .then((res) => setGithubIdentity(asItems(res)[0] || null))
       .catch(() => setGithubIdentity(null));
 
@@ -46,19 +46,19 @@ export default function Profile() {
     setLoading(true);
     (async () => {
       const [profileRes, mine, listingRes, reviewRes, followerCount, dealRes, followRes] = await Promise.all([
-        base44.entities.BuilderProfile.filter({ user_id: targetId }, { limit: 1 }),
+        api.entities.BuilderProfile.filter({ user_id: targetId }, { limit: 1 }),
         loadMyProfile(user.id),
-        base44.entities.Listing.filter(
+        api.entities.Listing.filter(
           { seller_id: targetId, status: { $ne: 'archived' } },
           { sort: '-created_date', limit: 24 }
         ),
-        base44.entities.Review.filter({ reviewee_id: targetId }, { sort: '-created_date', limit: 30 }),
-        base44.entities.Follow.count({ following_id: targetId }),
-        base44.entities.Deal.filter(
+        api.entities.Review.filter({ reviewee_id: targetId }, { sort: '-created_date', limit: 30 }),
+        api.entities.Follow.count({ following_id: targetId }),
+        api.entities.Deal.filter(
           { $or: [{ buyer_id: targetId }, { seller_id: targetId }], status: 'completed' },
           { limit: 100 }
         ),
-        base44.entities.Follow.filter({ follower_id: user.id, following_id: targetId }, { limit: 1 }),
+        api.entities.Follow.filter({ follower_id: user.id, following_id: targetId }, { limit: 1 }),
       ]);
       if (!active) return;
       setProfile(asItems(profileRes)[0] || null);
@@ -81,11 +81,11 @@ export default function Profile() {
   const toggleFollow = async () => {
     setBusy(true);
     if (followRecord) {
-      await base44.entities.Follow.delete(followRecord.id);
+      await api.entities.Follow.delete(followRecord.id);
       setFollowRecord(null);
       setFollowers((count) => Math.max(0, count - 1));
     } else {
-      const created = await base44.entities.Follow.create({ follower_id: user.id, following_id: targetId });
+      const created = await api.entities.Follow.create({ follower_id: user.id, following_id: targetId });
       setFollowRecord(created);
       setFollowers((count) => count + 1);
       pushNotification({
@@ -110,7 +110,7 @@ export default function Profile() {
     setBusy(true);
     const current = myProfile.blocked_ids || [];
     const next = blocked ? current.filter((blockId) => blockId !== targetId) : [...current, targetId];
-    const updated = await base44.entities.BuilderProfile.update(myProfile.id, { blocked_ids: next });
+    const updated = await api.entities.BuilderProfile.update(myProfile.id, { blocked_ids: next });
     setMyProfile(updated);
     setBusy(false);
     toast({ title: blocked ? 'Unblocked' : 'Blocked', description: blocked ? 'You can talk to them again.' : 'You will not see their listings or messages.' });

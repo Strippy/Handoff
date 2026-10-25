@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { asItems, formatAmount } from '@/lib/marketplace';
 import { Image } from '@/components/ui/image';
@@ -23,7 +23,7 @@ export default function Deals() {
     if (!user?.id) return;
     let active = true;
     (async () => {
-      const res = await base44.entities.Deal.filter(
+      const res = await api.entities.Deal.filter(
         { $or: [{ buyer_id: user.id }, { seller_id: user.id }] },
         { sort: '-created_date', limit: 50 }
       );

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { asItems, formatAmount, initials, loadMyProfile, pushNotification } from '@/lib/marketplace';
 import { Image } from '@/components/ui/image';
@@ -59,11 +59,11 @@ export default function DealRoom() {
     if (!user?.id) return;
     let active = true;
     (async () => {
-      const [found, p] = await Promise.all([base44.entities.Deal.get(id).catch(() => null), loadMyProfile(user.id)]);
+      const [found, p] = await Promise.all([api.entities.Deal.get(id).catch(() => null), loadMyProfile(user.id)]);
       if (!active) return;
       setDeal(found);
       setProfile(p);
-      const reviewRes = await base44.entities.Review.filter({ deal_id: id, reviewer_id: user.id }, { limit: 1 });
+      const reviewRes = await api.entities.Review.filter({ deal_id: id, reviewer_id: user.id }, { limit: 1 });
       if (!active) return;
       setMyReview(asItems(reviewRes)[0] || null);
       setLoading(false);
@@ -98,7 +98,7 @@ export default function DealRoom() {
     setBusy(true);
     try {
       const fn = action === 'delivery' ? 'scan-project' : 'deal-room';
-      const res = await base44.functions.invoke(fn, { action, deal_id: deal.id, ...payload });
+      const res = await api.functions.invoke(fn, { action, deal_id: deal.id, ...payload });
       const data = res?.data || {};
       if (data.error) throw new Error(data.error);
       if (data.deal) setDeal(data.deal);

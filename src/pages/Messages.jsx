@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { asItems, loadMyProfile } from '@/lib/marketplace';
 import ConversationList from '@/components/ConversationList';
@@ -24,11 +24,11 @@ export default function Messages() {
       setLoading(true);
       const [p, conversationRes, unreadRes] = await Promise.all([
         loadMyProfile(user.id),
-        base44.entities.Conversation.filter(
+        api.entities.Conversation.filter(
           { participants: { $in: [user.id] } },
           { sort: '-last_message_at', limit: 50 }
         ),
-        base44.entities.Message.filter({ recipient_id: user.id, read: false }, { limit: 200 }),
+        api.entities.Message.filter({ recipient_id: user.id, read: false }, { limit: 200 }),
       ]);
       if (!active) return;
       setProfile(p);

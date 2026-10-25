@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -26,16 +26,16 @@ export default function MessageThread({ conversationId, user, profile, onBack })
     setLoading(true);
     setMessages([]);
     (async () => {
-      const conv = await base44.entities.Conversation.get(conversationId);
+      const conv = await api.entities.Conversation.get(conversationId);
       if (!active) return;
       setConversation(conv);
-      const res = await base44.entities.Message.filter(
+      const res = await api.entities.Message.filter(
         { conversation_id: conversationId },
         { sort: 'created_date', limit: 200 }
       );
       if (!active) return;
       setMessages(asItems(res));
-      await base44.entities.Message.updateMany(
+      await api.entities.Message.updateMany(
         { conversation_id: conversationId, recipient_id: user.id, read: false },
         { $set: { read: true } }
       );
@@ -48,7 +48,7 @@ export default function MessageThread({ conversationId, user, profile, onBack })
   }, [conversationId, user.id]);
 
   useEffect(() => {
-    const unsubscribe = base44.entities.Message.subscribe((event) => {
+    const unsubscribe = api.entities.Message.subscribe((event) => {
       const record = event.data;
       if (!record || record.conversation_id !== conversationId) return;
       if (event.type === 'create') {
@@ -79,7 +79,7 @@ export default function MessageThread({ conversationId, user, profile, onBack })
         continue;
       }
       try {
-        const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
+        const { file_url } = await api.integrations.Core.UploadPublicFile({ file });
         uploaded.push({
           url: file_url,
           type: file.type?.startsWith('video') ? 'video' : 'image',
@@ -99,7 +99,7 @@ export default function MessageThread({ conversationId, user, profile, onBack })
     if (!body && !attachments.length) return;
     setSending(true);
     const recipientId = (conversation?.participants || []).find((id) => id !== user.id);
-    const created = await base44.entities.Message.create({
+    const created = await api.entities.Message.create({
       conversation_id: conversationId,
       sender_id: user.id,
       sender_name: myName,
@@ -109,7 +109,7 @@ export default function MessageThread({ conversationId, user, profile, onBack })
       attachments,
       read: false,
     });
-    await base44.entities.Conversation.update(conversationId, {
+    await api.entities.Conversation.update(conversationId, {
       last_message: body || 'Sent an attachment',
       last_message_at: new Date().toISOString(),
       last_sender_id: user.id,

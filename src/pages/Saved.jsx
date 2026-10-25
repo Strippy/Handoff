@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { asItems, initials } from '@/lib/marketplace';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,16 +23,16 @@ export default function Saved() {
     let active = true;
     (async () => {
       const [savedRes, followRes] = await Promise.all([
-        base44.entities.SavedListing.filter({ user_id: user.id }, { sort: '-created_date', limit: 100 }),
-        base44.entities.Follow.filter({ follower_id: user.id }, { sort: '-created_date', limit: 200 }),
+        api.entities.SavedListing.filter({ user_id: user.id }, { sort: '-created_date', limit: 100 }),
+        api.entities.Follow.filter({ follower_id: user.id }, { sort: '-created_date', limit: 200 }),
       ]);
       if (!active) return;
       const savedIds = asItems(savedRes).map((row) => row.listing_id);
       const follows = asItems(followRes);
       const followIds = follows.map((row) => row.following_id);
       const [listingRes, profileRes] = await Promise.all([
-        savedIds.length ? base44.entities.Listing.filter({ id: { $in: savedIds } }, { limit: 100 }) : [],
-        followIds.length ? base44.entities.BuilderProfile.filter({ user_id: { $in: followIds } }, { limit: 100 }) : [],
+        savedIds.length ? api.entities.Listing.filter({ id: { $in: savedIds } }, { limit: 100 }) : [],
+        followIds.length ? api.entities.BuilderProfile.filter({ user_id: { $in: followIds } }, { limit: 100 }) : [],
       ]);
       if (!active) return;
       setSavedListings(asItems(listingRes));
@@ -49,7 +49,7 @@ export default function Saved() {
     const row = followRows.find((item) => item.following_id === userId);
     if (!row) return;
     setBusy(true);
-    await base44.entities.Follow.delete(row.id);
+    await api.entities.Follow.delete(row.id);
     setFollowRows(followRows.filter((item) => item.id !== row.id));
     setFollowedBuilders(followedBuilders.filter((profile) => profile.user_id !== userId));
     setBusy(false);

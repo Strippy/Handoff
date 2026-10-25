@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { asItems, timeAgo } from '@/lib/marketplace';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -29,12 +29,12 @@ export default function Admin() {
     setLoading(true);
     const reportQuery = reportFilter === 'all' ? { reason: { $exists: true } } : { status: reportFilter };
     const [reportRes, listingRes, builders, listingCount, deals, reviews] = await Promise.all([
-      base44.entities.Report.filter(reportQuery, { sort: '-created_date', limit: 100 }),
-      base44.entities.Listing.filter({ status: { $exists: true } }, { sort: '-created_date', limit: 50 }),
-      base44.entities.BuilderProfile.count({ user_id: { $exists: true } }),
-      base44.entities.Listing.count({ status: 'active' }),
-      base44.entities.Deal.count({ status: { $exists: true } }),
-      base44.entities.Review.count({ rating: { $exists: true } }),
+      api.entities.Report.filter(reportQuery, { sort: '-created_date', limit: 100 }),
+      api.entities.Listing.filter({ status: { $exists: true } }, { sort: '-created_date', limit: 50 }),
+      api.entities.BuilderProfile.count({ user_id: { $exists: true } }),
+      api.entities.Listing.count({ status: 'active' }),
+      api.entities.Deal.count({ status: { $exists: true } }),
+      api.entities.Review.count({ rating: { $exists: true } }),
     ]);
     setReports(asItems(reportRes));
     setListings(asItems(listingRes));
@@ -57,7 +57,7 @@ export default function Admin() {
 
   const updateReport = async (report, status) => {
     setBusy(true);
-    await base44.entities.Report.update(report.id, { status });
+    await api.entities.Report.update(report.id, { status });
     setReports(reports.map((item) => (item.id === report.id ? { ...item, status } : item)));
     setBusy(false);
   };
@@ -65,9 +65,9 @@ export default function Admin() {
   const archiveTarget = async (report) => {
     setBusy(true);
     if (report.target_type === 'listing') {
-      await base44.entities.Listing.update(report.target_id, { status: 'archived' });
+      await api.entities.Listing.update(report.target_id, { status: 'archived' });
     }
-    await base44.entities.Report.update(report.id, { status: 'actioned' });
+    await api.entities.Report.update(report.id, { status: 'actioned' });
     setReports(reports.map((item) => (item.id === report.id ? { ...item, status: 'actioned' } : item)));
     setBusy(false);
     toast({ title: 'Actioned', description: 'The listing is off the market.' });
@@ -75,7 +75,7 @@ export default function Admin() {
 
   const setListingStatus = async (listing, status) => {
     setBusy(true);
-    await base44.entities.Listing.update(listing.id, { status });
+    await api.entities.Listing.update(listing.id, { status });
     setListings(listings.map((item) => (item.id === listing.id ? { ...item, status } : item)));
     setBusy(false);
   };

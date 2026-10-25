@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { initials, loadMyProfile } from '@/lib/marketplace';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -38,8 +38,8 @@ export default function Layout() {
     (async () => {
       const [p, notifs, msgs] = await Promise.all([
         loadMyProfile(user.id),
-        base44.entities.Notification.count({ user_id: user.id, read: false }),
-        base44.entities.Message.count({ recipient_id: user.id, read: false }),
+        api.entities.Notification.count({ user_id: user.id, read: false }),
+        api.entities.Message.count({ recipient_id: user.id, read: false }),
       ]);
       if (!active) return;
       setProfile(p);

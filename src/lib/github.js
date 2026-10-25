@@ -1,8 +1,8 @@
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 
 // All GitHub calls go through the `github` backend function; tokens never reach the browser.
 const call = async (action, payload = {}) => {
-  const res = await base44.functions.invoke('github', { action, ...payload });
+  const res = await api.functions.invoke('github', { action, ...payload });
   return res?.data || {};
 };
 

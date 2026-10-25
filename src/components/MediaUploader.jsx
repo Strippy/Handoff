@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { checkMediaFile, MAX_VIDEO_MB, MAX_VIDEO_SECONDS } from '@/lib/marketplace';
 import { Image } from '@/components/ui/image';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ export default function MediaUploader({ coverImage, gallery = [], onCoverChange,
   const [error, setError] = useState('');
 
   const upload = async (file) => {
-    const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
+    const { file_url } = await api.integrations.Core.UploadPublicFile({ file });
     return {
       url: file_url,
       type: file.type?.startsWith('video') ? 'video' : 'image',

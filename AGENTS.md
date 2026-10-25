@@ -1,34 +1,30 @@
 # AGENTS.md
 
-## Project Context
+## Project context
 
-This is a Base44 app repository. Treat it as user-owned application code, keep changes focused on the user's request, and preserve existing project conventions.
+Handoff is user-owned application code: a React + Vite app hosted on Vercel, with Supabase for the
+database (Postgres + row-level security), auth, storage and realtime, and server functions under
+`/api`. Keep changes focused on the request and follow the existing conventions. There is no seeded
+or sample data anywhere, and none should be added.
 
-Start with `README.md` for local setup, environment variables, and publish workflow.
+Start with `README.md` for setup, environment variables and deployment.
 
-## Base44 References
+## Key files
 
-- CLI overview: https://docs.base44.com/developers/references/cli/get-started/overview.md
-- Agent skills: https://docs.base44.com/developers/backend/overview/skills.md
+- `src/api/client.js` — the app's single backend connection (`api.entities`, `api.auth`, `api.functions`, `api.integrations`).
+- `src/api/entities.js` — data layer shared by browser and server; Mongo-style filters → PostgREST.
+- `src/api/schema.js` — tables and column kinds. Keep it in step with `supabase/migrations/`.
+- `server/functions/*.ts` — server functions (service role). `server/router.ts` maps `/api/<name>` to them.
+- `supabase/migrations/` — schema, row-level security and guard triggers. Add a new migration for every change; never edit one that has been applied.
+- `.env.local` — local-only values; never commit secrets.
 
-If your agent supports Agent Skills, install or update Base44 skills before Base44-specific work:
+## Rules that keep users safe
 
-```bash
-npx skills add base44/skills
-```
+- Anything trust- or money-related (listing status/deal type, deals, reviews, scans, billing) is written only by server functions. Don't add browser write paths for these.
+- Every new table needs RLS enabled and explicit policies, plus guard triggers for columns users must not change.
+- Files: users upload only into their own folder; the server must check ownership before reading a private file.
 
-## Key Files
+## Checks
 
-- `src/`: frontend application source.
-- `src/api/base44Client.js`: frontend Base44 SDK client.
-- `vite.config.js`: Vite config and Base44 Vite plugin setup.
-- `.env.local`: local-only environment values; never commit secrets.
-
-## Working Notes
-
-- Use `base44 dev` as the default local development command when you need the local Base44 backend. It can run the backend and frontend together.
-- When docs or code mention the frontend being started automatically, that usually means the Base44 project config includes `site.serveCommand`, for example `"serveCommand": "npm run dev"` in `base44/config.jsonc`.
-- Use `npm run dev` only for frontend-only work against the hosted Base44 backend.
-- Prefer the existing Base44 CLI workflow over adding new npm scripts for Base44-specific tasks.
-- Reuse the existing SDK client and Vite plugin patterns before adding new Base44 integration paths.
-- Run the relevant checks from `package.json` before finishing code changes.
+Run before finishing code changes: `npm run lint`, `npm run typecheck`, `npm run build`, and when the
+database or server changed, `npm run test:db` and `npm run test:api` (see README for the local test setup).

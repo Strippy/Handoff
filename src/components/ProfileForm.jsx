@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -77,7 +77,7 @@ export default function ProfileForm({ profile, user, onSaved }) {
     event.target.value = '';
     if (!file) return;
     setUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
+    const { file_url } = await api.integrations.Core.UploadPublicFile({ file });
     set({ avatar_url: file_url });
     setUploading(false);
   };
@@ -100,10 +100,10 @@ export default function ProfileForm({ profile, user, onSaved }) {
     };
     let saved;
     if (profile?.id) {
-      saved = await base44.entities.BuilderProfile.update(profile.id, payload);
+      saved = await api.entities.BuilderProfile.update(profile.id, payload);
     } else {
-      const existing = await base44.entities.BuilderProfile.count({ founding_builder: true });
-      saved = await base44.entities.BuilderProfile.create({
+      const existing = await api.entities.BuilderProfile.count({ founding_builder: true });
+      saved = await api.entities.BuilderProfile.create({
         ...payload,
         user_id: user.id,
         builders_code_accepted: true,

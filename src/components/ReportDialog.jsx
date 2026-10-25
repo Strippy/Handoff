@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,7 +31,7 @@ export default function ReportDialog({ targetType, targetId, targetLabel, user, 
 
   const submit = async () => {
     setSending(true);
-    await base44.entities.Report.create({
+    await api.entities.Report.create({
       reporter_id: user?.id || '',
       reporter_name: profile?.display_name || user?.full_name || 'A builder',
       target_type: targetType,

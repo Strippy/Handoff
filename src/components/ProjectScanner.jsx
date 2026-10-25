@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import ScanReport from '@/components/ScanReport';
 import GithubRepoPicker from '@/components/GithubRepoPicker';
@@ -33,7 +33,7 @@ export default function ProjectScanner({ scan, privateFindings, onScanned, onApp
   const runScan = async (payload) => {
     setPhase('scanning');
     try {
-      const res = await base44.functions.invoke('scan-project', payload);
+      const res = await api.functions.invoke('scan-project', payload);
       const data = res?.data || {};
       if (data.error) throw new Error(data.error);
       setApplied(false);
@@ -59,7 +59,7 @@ export default function ProjectScanner({ scan, privateFindings, onScanned, onApp
     setPhase('uploading');
     let fileUri;
     try {
-      const up = await base44.integrations.Core.UploadPrivateFile({ file });
+      const up = await api.integrations.Core.UploadPrivateFile({ file });
       fileUri = up.file_uri;
     } catch (err) {
       setError(`Upload failed: ${errorText(err)}`);

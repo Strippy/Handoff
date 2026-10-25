@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { pushNotification } from '@/lib/marketplace';
@@ -23,7 +23,7 @@ export default function ReviewForm({ deal, user, profile, onSubmitted }) {
     // The server checks the deal is complete, you're in it, and you haven't reviewed it already.
     let created;
     try {
-      const res = await base44.functions.invoke('deal-room', { action: 'review', deal_id: deal.id, rating, body: body.trim() });
+      const res = await api.functions.invoke('deal-room', { action: 'review', deal_id: deal.id, rating, body: body.trim() });
       created = res?.data?.review;
       if (!created) throw new Error('Could not post the review — try again.');
     } catch (err) {

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
 import { asItems, initials, timeAgo } from '@/lib/marketplace';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -18,7 +18,7 @@ export default function Notifications() {
     if (!user?.id) return;
     let active = true;
     (async () => {
-      const res = await base44.entities.Notification.filter(
+      const res = await api.entities.Notification.filter(
         { user_id: user.id },
         { sort: '-created_date', limit: 50 }
       );
@@ -32,13 +32,13 @@ export default function Notifications() {
   }, [user?.id]);
 
   const markAllRead = async () => {
-    await base44.entities.Notification.updateMany({ user_id: user.id, read: false }, { $set: { read: true } });
+    await api.entities.Notification.updateMany({ user_id: user.id, read: false }, { $set: { read: true } });
     setItems(items.map((item) => ({ ...item, read: true })));
   };
 
   const openItem = async (item) => {
     if (!item.read) {
-      await base44.entities.Notification.update(item.id, { read: true });
+      await api.entities.Notification.update(item.id, { read: true });
       setItems(items.map((entry) => (entry.id === item.id ? { ...entry, read: true } : entry)));
     }
     // in-app links only — a notification can never send you off-site
