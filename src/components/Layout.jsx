@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { api } from '@/api/client';
 import { useAuth } from '@/lib/AuthContext';
@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import ThemeToggle from '@/components/ThemeToggle';
+import PageLoader from '@/components/PageLoader';
 import { ProPill } from '@/components/ProGate';
 import { usePlan } from '@/lib/billing';
 import { Bell, Bookmark, Compass, Crown, LogOut, MessageCircle, PlusCircle, Shield, User as UserIcon } from 'lucide-react';
@@ -154,7 +155,10 @@ export default function Layout() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 pb-28 pt-6 md:pb-16">
-        <Outlet />
+        {/* Keeps the header up while the next page's file loads. */}
+        <Suspense fallback={<PageLoader inline />}>
+          <Outlet />
+        </Suspense>
       </main>
 
       <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur-xl md:hidden">
