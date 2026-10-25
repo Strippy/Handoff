@@ -230,7 +230,8 @@ POSTGREST_BIN=/path/to/postgrest npm run test:api  # data layer + end-to-end API
 ## Deploying
 
 - **Supabase:** apply the migrations. In *Authentication → URL configuration* set the Site URL to your domain and add it (plus Vercel preview URLs if you use them) to the redirect URLs. Turn on the Google provider if you want Google sign-in. Optional: put `{{ .Token }}` in the *Confirm signup* email template so new users also get a 6-digit code.
-- **Vercel:** import the repo (framework: Vite). Set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `APP_URL` (your domain), and `STRIPE_SECRET_KEY` / `ANTHROPIC_API_KEY` when you use payments and AI summaries. Handoff takes payments, so it needs Vercel's Pro plan — Hobby is for non-commercial use.
+- **Vercel:** import the repo (framework: Vite). The production Supabase URL and publishable key are built in (`src/api/public-config.js` — public by design); override them with `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` / `SUPABASE_URL` for another project. Set `SUPABASE_SERVICE_ROLE_KEY` (Sensitive), `APP_URL` (your domain), and `STRIPE_SECRET_KEY` / `ANTHROPIC_API_KEY` when you use payments and AI summaries. Functions run in Sydney (`syd1`) next to the database. Handoff takes payments, so it needs Vercel's Pro plan — Hobby is for non-commercial use.
+- **Email:** Supabase's built-in email only delivers to your own team's addresses. Before inviting anyone, add an SMTP provider in *Authentication → Emails*.
 - **GitHub sign-in:** after deploying, an admin runs *Admin → Set up GitHub sign-in* on the live domain.
 
 ## License

@@ -5,16 +5,13 @@
 //   api.integrations     – file uploads to Supabase Storage
 import { createClient } from '@supabase/supabase-js';
 import { createEntities, DataError } from './entities.js';
+import { PUBLIC_SUPABASE_KEY, PUBLIC_SUPABASE_URL } from './public-config.js';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || PUBLIC_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || PUBLIC_SUPABASE_KEY;
 const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
 
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error('Missing VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY — see README "Running locally".');
-}
-
-export const supabase = createClient(SUPABASE_URL || 'http://localhost:54321', SUPABASE_KEY || 'missing-key', {
+export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
 });
 

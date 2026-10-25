@@ -2,18 +2,19 @@
 // the AI model, and calls between functions. Runs on Vercel (Node.js) next to the web app.
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createEntities } from "../src/api/entities.js";
+import { PUBLIC_SUPABASE_URL } from "../src/api/public-config.js";
 
 export type Row = Record<string, any>;
 
 export const env = (name: string): string => process.env[name] || "";
 
-const supabaseUrl = () => env("SUPABASE_URL") || env("VITE_SUPABASE_URL");
+const supabaseUrl = () => env("SUPABASE_URL") || env("VITE_SUPABASE_URL") || PUBLIC_SUPABASE_URL;
 const serviceKey = () => env("SUPABASE_SERVICE_ROLE_KEY") || env("SUPABASE_SECRET_KEY");
 
 let service: SupabaseClient | null = null;
 export function serviceClient(): SupabaseClient {
   if (!service) {
-    if (!supabaseUrl() || !serviceKey()) throw new Error("Server isn't configured: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.");
+    if (!serviceKey()) throw new Error("Server isn't configured yet: add SUPABASE_SERVICE_ROLE_KEY in Vercel.");
     service = createClient(supabaseUrl(), serviceKey(), {
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     });
