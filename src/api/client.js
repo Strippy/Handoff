@@ -34,6 +34,7 @@ function realtime(table, callback) {
 const entities = createEntities(supabase, { realtime });
 
 // ---- auth ------------------------------------------------------------------------------------
+let providersPromise = null;
 const authError = (error, fallback) => new DataError(error?.message || fallback, error?.status || 400);
 const origin = () => window.location.origin;
 
@@ -67,7 +68,16 @@ const auth = {
 
   async loginViaEmailPassword(email, password) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw authError(error, 'Invalid email or password');
+    if (error) {
+      const code = error.code || '';
+      if (code === 'invalid_credentials' || /invalid login credentials/i.test(error.message || '')) {
+        throw new DataError('Wrong email or password. Accounts from the old Handoff site didn’t move over — if you haven’t signed up here yet, create an account.', 400);
+      }
+      if (code === 'email_not_confirmed' || /not confirmed/i.test(error.message || '')) {
+        throw new DataError('Confirm your email first — open the link we emailed you, then log in.', 400);
+      }
+      throw authError(error, 'Invalid email or password');
+    }
     return data;
   },
 
@@ -110,6 +120,15 @@ const auth = {
   async resetPassword({ newPassword }) {
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) throw authError(error, 'Failed to reset password');
+  },
+
+  /** Sign-in providers switched on in Supabase Auth, e.g. { email: true, google: false }. */
+  providers() {
+    providersPromise ??= fetch(`${SUPABASE_URL}/auth/v1/settings`, { headers: { apikey: SUPABASE_KEY } })
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((j) => j?.external || {})
+      .catch(() => ({}));
+    return providersPromise;
   },
 
   onChange(callback) {
