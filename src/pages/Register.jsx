@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { api } from "@/api/client";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,15 +17,6 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  // Only offer Google when it's switched on in Supabase Auth.
-  const [googleOn, setGoogleOn] = useState(false);
-  useEffect(() => {
-    let active = true;
-    api.auth.providers().then((p) => active && setGoogleOn(Boolean(p.google)));
-    return () => {
-      active = false;
-    };
-  }, []);
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
 
@@ -38,11 +29,7 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      const result = await api.auth.register({ email, password, returnTo: safeReturnTo() });
-      if (!result.needsConfirmation) {
-        window.location.href = safeReturnTo();
-        return;
-      }
+      await base44.auth.register({ email, password });
       setShowOtp(true);
     } catch (err) {
       setError(err.message || "Registration failed");
@@ -55,7 +42,10 @@ export default function Register() {
     setError("");
     setLoading(true);
     try {
-      await api.auth.verifyOtp({ email, otpCode });
+      const result = await base44.auth.verifyOtp({ email, otpCode });
+      if (result?.access_token) {
+        base44.auth.setToken(result.access_token);
+      }
       window.location.href = safeReturnTo();
     } catch (err) {
       setError(err.message || "Invalid verification code");
@@ -67,7 +57,7 @@ export default function Register() {
   const handleResend = async () => {
     setError("");
     try {
-      await api.auth.resendOtp(email);
+      await base44.auth.resendOtp(email);
       toast({
         title: "Code sent",
         description: "Check your email for the new code.",
@@ -77,13 +67,8 @@ export default function Register() {
     }
   };
 
-  const handleGoogle = async () => {
-    setError("");
-    try {
-      await api.auth.loginWithProvider("google", safeReturnTo());
-    } catch (err) {
-      setError(err.message || "Google sign-in isn't available right now");
-    }
+  const handleGoogle = () => {
+    base44.auth.loginWithProvider("google", safeReturnTo());
   };
 
   if (showOtp) {
@@ -91,7 +76,7 @@ export default function Register() {
       <AuthLayout
         icon={Mail}
         title="Verify your email"
-        subtitle={`We emailed ${email}. Click the link in it, or enter the 6-digit code.`}
+        subtitle={`We sent a code to ${email}`}
       >
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
@@ -131,7 +116,7 @@ export default function Register() {
           )}
         </Button>
         <p className="text-center text-sm text-muted-foreground mt-4">
-          Didn't get the email?{" "}
+          Didn't receive the code?{" "}
           <button onClick={handleResend} className="text-primary font-medium hover:underline">
             Resend
           </button>
@@ -157,27 +142,23 @@ export default function Register() {
         </>
       }
     >
-      {googleOn && (
-        <>
-          <Button
-            variant="outline"
-            className="w-full h-12 text-sm font-medium mb-6"
-            onClick={handleGoogle}
-          >
-            <GoogleIcon className="w-5 h-5 mr-2" />
-            Continue with Google
-          </Button>
+      <Button
+        variant="outline"
+        className="w-full h-12 text-sm font-medium mb-6"
+        onClick={handleGoogle}
+      >
+        <GoogleIcon className="w-5 h-5 mr-2" />
+        Continue with Google
+      </Button>
 
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-3 text-muted-foreground">or</span>
-            </div>
-          </div>
-        </>
-      )}
+      <div className="relative mb-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-border" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-card px-3 text-muted-foreground">or</span>
+        </div>
+      </div>
 
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">

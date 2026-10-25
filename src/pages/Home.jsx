@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '@/api/client';
+import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { asItems, loadMyProfile } from '@/lib/marketplace';
 import ListingCard from '@/components/ListingCard';
@@ -87,9 +87,9 @@ export default function Home() {
   useEffect(() => {
     (async () => {
       const [listed, builders, sold] = await Promise.all([
-        api.entities.Listing.count({ status: 'active' }),
-        api.entities.BuilderProfile.count({ user_id: { $exists: true } }),
-        api.entities.Listing.count({ status: 'sold' }),
+        base44.entities.Listing.count({ status: 'active' }),
+        base44.entities.BuilderProfile.count({ user_id: { $exists: true } }),
+        base44.entities.Listing.count({ status: 'sold' }),
       ]);
       setStats({ listings: listed || 0, builders: builders || 0, sold: sold || 0 });
     })();
@@ -100,7 +100,7 @@ export default function Home() {
       setEarlyCount(0);
       return;
     }
-    api.entities.Listing.count({ status: 'active', created_date: { $gt: early.cutoff }, seller_id: { $ne: early.userId } })
+    base44.entities.Listing.count({ status: 'active', created_date: { $gt: early.cutoff }, seller_id: { $ne: early.userId } })
       .then((n) => setEarlyCount(n || 0))
       .catch(() => setEarlyCount(0));
   }, [early]);
@@ -110,7 +110,7 @@ export default function Home() {
     let active = true;
     const timer = setTimeout(async () => {
       setLoading(true);
-      const res = await api.entities.Listing.filter(buildQuery(filters, early), {
+      const res = await base44.entities.Listing.filter(buildQuery(filters, early), {
         sort: filters.sort,
         limit: PAGE_SIZE,
       });
@@ -129,7 +129,7 @@ export default function Home() {
   const loadMore = async () => {
     if (!cursor) return;
     setLoadingMore(true);
-    const res = await api.entities.Listing.filter(buildQuery(filters, early), {
+    const res = await base44.entities.Listing.filter(buildQuery(filters, early), {
       sort: filters.sort,
       limit: PAGE_SIZE,
       cursor,

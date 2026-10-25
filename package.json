@@ -1,21 +1,19 @@
 {
-  "name": "handoff",
+  "name": "base44-app",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:api": "node --import tsx scripts/dev-api.mjs",
     "build": "vite build",
-    "preview": "vite preview",
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
-    "typecheck": "tsc -p ./tsconfig.server.json",
-    "test:db": "bash tests/db/run.sh",
-    "test:api": "bash tests/local/start.sh && node --test --test-concurrency=1 tests/api/*.test.mjs",
-    "typecheck:web": "tsc -p ./jsconfig.json"
+    "typecheck": "tsc -p ./jsconfig.json",
+    "preview": "vite preview"
   },
   "dependencies": {
+    "@base44/sdk": "^0.8.57",
+    "@base44/vite-plugin": "^1.0.47",
     "@hello-pangea/dnd": "^17.0.0",
     "@hookform/resolvers": "^4.1.2",
     "@radix-ui/react-accordion": "^1.2.3",
@@ -47,7 +45,6 @@
     "@radix-ui/react-tooltip": "^1.1.8",
     "@stripe/react-stripe-js": "^3.0.0",
     "@stripe/stripe-js": "^5.2.0",
-    "@supabase/supabase-js": "^2.118.0",
     "@tanstack/react-query": "^5.84.1",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
@@ -55,7 +52,6 @@
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.5.2",
-    "fflate": "^0.8.2",
     "framer-motion": "^11.16.4",
     "html2canvas": "^1.4.1",
     "input-otp": "^1.4.2",
@@ -84,7 +80,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
-    "@types/node": "^22.20.5",
+    "@types/node": "^22.13.5",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-react": "^6.0.5",
@@ -99,11 +95,7 @@
     "nitro": "^3.0.260610-beta",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
-    "tsx": "^4.23.15",
-    "typescript": "^5.9.3",
+    "typescript": "^5.8.2",
     "vite": "^8.2.0"
-  },
-  "engines": {
-    "node": ">=22"
   }
 }

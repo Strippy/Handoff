@@ -1,0 +1,381 @@
+{
+  "name": "ProjectScan",
+  "properties": {
+    "ai": {
+      "properties": {
+        "category": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "features_found": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "handover_notes": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "stage": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "tagline": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "unfinished": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "ai_status": {
+      "enum": [
+        "ok",
+        "failed"
+      ],
+      "type": "string"
+    },
+    "built_on": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "built_with_ai": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "checks": {
+      "items": {
+        "properties": {
+          "fix": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "max": {
+            "type": "number"
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "points": {
+            "type": "number"
+          },
+          "why": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "connections": {
+      "items": {
+        "properties": {
+          "env": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "wired",
+              "needs_setup",
+              "installed_unused"
+            ],
+            "type": "string"
+          },
+          "undocumented_env": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "env_vars_documented": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "env_vars_referenced": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "external_hosts": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "file_count": {
+      "type": "number"
+    },
+    "grade": {
+      "type": "string"
+    },
+    "languages": {
+      "items": {
+        "properties": {
+          "files": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "lines_of_code": {
+      "type": "number"
+    },
+    "listing_id": {
+      "type": "string"
+    },
+    "missing": {
+      "items": {
+        "properties": {
+          "fix": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "why": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "owner_id": {
+      "description": "User who ran the scan",
+      "type": "string"
+    },
+    "private_findings": {
+      "description": "Where secrets were found (file + line, never the value). Owner only.",
+      "items": {
+        "properties": {
+          "line": {
+            "type": "number"
+          },
+          "path": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "rls": {
+        "read": {
+          "$or": [
+            {
+              "data.owner_id": "{{user.id}}"
+            },
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            }
+          ]
+        }
+      },
+      "type": "array"
+    },
+    "project_name": {
+      "type": "string"
+    },
+    "published": {
+      "default": false,
+      "description": "True once attached to a live listing",
+      "type": "boolean"
+    },
+    "repo_url": {
+      "type": "string"
+    },
+    "scanned_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "score": {
+      "type": "number"
+    },
+    "secrets_summary": {
+      "items": {
+        "properties": {
+          "count": {
+            "type": "number"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "signals": {
+      "properties": {
+        "committed_junk": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "has_tests": {
+          "type": "boolean"
+        },
+        "mock_data_files": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "not_implemented": {
+          "type": "number"
+        },
+        "placeholder_files": {
+          "type": "number"
+        },
+        "todo_count": {
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "source_file_count": {
+      "type": "number"
+    },
+    "source_label": {
+      "description": "Zip file name or owner/repo",
+      "type": "string"
+    },
+    "source_type": {
+      "enum": [
+        "zip",
+        "github"
+      ],
+      "type": "string"
+    },
+    "suggested_included": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "unity_version": {
+      "type": "string"
+    },
+    "repo_private": {
+      "type": "boolean",
+      "description": "Scanned from a private repo"
+    },
+    "repo_verified": {
+      "type": "boolean",
+      "description": "GitHub confirmed the scanner's user owns / can push to the repo"
+    },
+    "repo_role": {
+      "type": "string",
+      "enum": [
+        "owner",
+        "collaborator",
+        ""
+      ],
+      "description": "owner = admin on the repo, collaborator = push access"
+    },
+    "verified_github_login": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "owner_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.owner_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.owner_id": "{{user.id}}"
+        },
+        {
+          "data.published": true
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  },
+  "type": "object"
+}

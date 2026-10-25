@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '@/api/client';
+import { base44 } from '@/api/base44Client';
 import { onFreePlan, usePlan } from '@/lib/billing';
 import { ProPill } from '@/components/ProGate';
 import { BarChart3, Bookmark, Eye, HandCoins, Lock, MessageCircle, MessageSquareText, Sparkles } from 'lucide-react';
@@ -15,8 +15,8 @@ export default function ListingInsights({ listing, offers, questions, reactions 
     if (!plan || locked) return;
     let active = true;
     Promise.all([
-      api.entities.SavedListing.count({ listing_id: listing.id }),
-      api.entities.Conversation.count({ listing_id: listing.id }),
+      base44.entities.SavedListing.count({ listing_id: listing.id }),
+      base44.entities.Conversation.count({ listing_id: listing.id }),
     ])
       .then(([saves, chats]) => active && setCounts({ saves: saves || 0, chats: chats || 0 }))
       .catch(() => active && setCounts({ saves: 0, chats: 0 }));

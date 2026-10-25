@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { api } from '@/api/client';
+import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -105,7 +105,7 @@ export default function DealChecklist({ deal, user, busy, act }) {
     if (!/\.zip$/i.test(file.name)) return act('_error', { message: 'Deliver a .zip of the full project.' });
     setUploading(true);
     try {
-      const up = await api.integrations.Core.UploadPrivateFile({ file });
+      const up = await base44.integrations.Core.UploadPrivateFile({ file });
       await act('delivery', { file_uri: up.file_uri, file_name: file.name }, { body: 'The code has been delivered — check it and mark it received.' });
     } catch (err) {
       act('_error', { message: err?.message || 'Upload failed — try again.' });

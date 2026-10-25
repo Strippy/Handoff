@@ -1,0 +1,270 @@
+{
+  "description": "A deal between a buyer and a seller. Written only by the deal-room and scan-project functions.",
+  "name": "Deal",
+  "properties": {
+    "amount": {
+      "type": "number"
+    },
+    "asset_transfer": {
+      "default": false,
+      "type": "boolean"
+    },
+    "buyer_confirmed": {
+      "default": false,
+      "type": "boolean"
+    },
+    "buyer_id": {
+      "type": "string"
+    },
+    "buyer_name": {
+      "type": "string"
+    },
+    "cancelled_by": {
+      "type": "string"
+    },
+    "code_transfer": {
+      "default": false,
+      "type": "boolean"
+    },
+    "completed_at": {
+      "type": "string"
+    },
+    "currency": {
+      "type": "string"
+    },
+    "deal_type": {
+      "type": "string"
+    },
+    "delivery": {
+      "description": "Server-recorded proof of what the seller delivered",
+      "properties": {
+        "at": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "built_on": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "bytes": {
+          "type": "number"
+        },
+        "commit": {
+          "type": "string"
+        },
+        "commit_date": {
+          "type": "string"
+        },
+        "file_count": {
+          "type": "number"
+        },
+        "file_uri": {
+          "type": "string"
+        },
+        "grade": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "lines_of_code": {
+          "type": "number"
+        },
+        "listing_scan": {
+          "properties": {
+            "file_count": {
+              "type": "number"
+            },
+            "grade": {
+              "type": "string"
+            },
+            "lines_of_code": {
+              "type": "number"
+            },
+            "score": {
+              "type": "number"
+            }
+          },
+          "type": "object"
+        },
+        "method": {
+          "type": "string"
+        },
+        "repo": {
+          "type": "string"
+        },
+        "repo_private": {
+          "type": "boolean"
+        },
+        "score": {
+          "type": "number"
+        },
+        "secrets_found": {
+          "type": "number"
+        },
+        "sha256": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "dispute": {
+      "properties": {
+        "at": {
+          "type": "string"
+        },
+        "criterion": {
+          "type": "string"
+        },
+        "details": {
+          "type": "string"
+        },
+        "open": {
+          "type": "boolean"
+        },
+        "raised_by": {
+          "type": "string"
+        },
+        "resolved_at": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "escrow_set": {
+      "default": false,
+      "type": "boolean"
+    },
+    "escrow_url": {
+      "type": "string"
+    },
+    "handover_notes": {
+      "type": "string"
+    },
+    "inspection_ends_at": {
+      "type": "string"
+    },
+    "keys_rotated": {
+      "default": false,
+      "description": "Seller confirmed every key/password was revoked or rotated",
+      "type": "boolean"
+    },
+    "listing_cover": {
+      "type": "string"
+    },
+    "listing_id": {
+      "type": "string"
+    },
+    "listing_title": {
+      "type": "string"
+    },
+    "log": {
+      "description": "Append-only, server-written timeline",
+      "items": {
+        "properties": {
+          "at": {
+            "type": "string"
+          },
+          "by": {
+            "type": "string"
+          },
+          "event": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "offer_id": {
+      "type": "string"
+    },
+    "received_at": {
+      "type": "string"
+    },
+    "seller_id": {
+      "type": "string"
+    },
+    "seller_name": {
+      "type": "string"
+    },
+    "sold": {
+      "default": false,
+      "type": "boolean"
+    },
+    "status": {
+      "default": "open",
+      "enum": [
+        "open",
+        "completed",
+        "cancelled"
+      ],
+      "type": "string"
+    },
+    "terms": {
+      "description": "Agreed handover terms",
+      "properties": {
+        "criteria": {
+          "type": "string"
+        },
+        "included": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "inspection_days": {
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "terms_agreed_buyer_at": {
+      "type": "string"
+    },
+    "terms_agreed_seller_at": {
+      "type": "string"
+    },
+    "terms_hash": {
+      "description": "sha256 of the agreed terms + price",
+      "type": "string"
+    },
+    "terms_set_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "listing_id",
+    "buyer_id",
+    "seller_id"
+  ],
+  "rls": {
+    "create": false,
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.buyer_id": "{{user.id}}"
+        },
+        {
+          "data.seller_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": false
+  },
+  "type": "object"
+}

@@ -1,0 +1,376 @@
+{
+  "description": "Created and status-changed only through the listing-sync function.",
+  "name": "Listing",
+  "properties": {
+    "ai_tools": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "category": {
+      "enum": [
+        "web_app",
+        "mobile_app",
+        "saas",
+        "game",
+        "website",
+        "script_tool",
+        "extension",
+        "template",
+        "api",
+        "ai_agent",
+        "other"
+      ],
+      "type": "string"
+    },
+    "cover_image": {
+      "type": "string"
+    },
+    "currency": {
+      "default": "USD",
+      "enum": [
+        "AUD",
+        "USD",
+        "EUR",
+        "GBP"
+      ],
+      "type": "string"
+    },
+    "deal_type": {
+      "enum": [
+        "full_sale",
+        "license",
+        "collaborator",
+        "finish_it",
+        "free_adoption"
+      ],
+      "rls": {
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
+      "type": "string"
+    },
+    "demo_url": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "feedback_wanted": {
+      "default": false,
+      "type": "boolean"
+    },
+    "gallery": {
+      "items": {
+        "properties": {
+          "caption": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "image",
+              "video"
+            ],
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "included": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "known_issues": {
+      "type": "string"
+    },
+    "monthly_costs": {
+      "type": "string"
+    },
+    "open_to_offers": {
+      "default": true,
+      "type": "boolean"
+    },
+    "ownership_attested_at": {
+      "description": "When the seller attested they own or may sell this project",
+      "format": "date-time",
+      "rls": {
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
+      "type": "string"
+    },
+    "price": {
+      "type": "number"
+    },
+    "reported_revenue": {
+      "type": "string"
+    },
+    "reported_users": {
+      "type": "string"
+    },
+    "scan_grade": {
+      "description": "Grade label from the attached scan",
+      "type": "string",
+      "rls": {
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "delete": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "scan_id": {
+      "description": "Verified ProjectScan attached by the server",
+      "type": "string",
+      "rls": {
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "delete": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "scan_repo_verified": {
+      "description": "Attached scan came from a repo GitHub confirmed the seller owns",
+      "type": "boolean",
+      "rls": {
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "delete": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "scan_score": {
+      "description": "Handoff readiness score from the attached scan",
+      "type": "number",
+      "rls": {
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "delete": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "seller_avatar": {
+      "rls": {
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
+      "type": "string"
+    },
+    "seller_id": {
+      "rls": {
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
+      "type": "string"
+    },
+    "seller_name": {
+      "rls": {
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
+      "type": "string"
+    },
+    "stage": {
+      "enum": [
+        "idea",
+        "prototype",
+        "mvp",
+        "live",
+        "earning"
+      ],
+      "type": "string"
+    },
+    "status": {
+      "default": "active",
+      "enum": [
+        "active",
+        "reserved",
+        "sold",
+        "archived"
+      ],
+      "rls": {
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
+      "type": "string"
+    },
+    "tagline": {
+      "type": "string"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "tech_stack": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "title": {
+      "type": "string"
+    },
+    "views": {
+      "default": 0,
+      "rls": {
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
+      "type": "number"
+    },
+    "what_works": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "title"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.seller_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": true,
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.seller_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  },
+  "type": "object"
+}

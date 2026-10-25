@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { api } from '@/api/client';
+import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import {
   asItems,
@@ -59,7 +59,7 @@ export default function ListingDetail() {
     if (!user?.id) return;
     let active = true;
     (async () => {
-      const found = await api.entities.Listing.get(id);
+      const found = await base44.entities.Listing.get(id);
       if (!active) return;
       setListing(found);
 
@@ -67,21 +67,21 @@ export default function ListingDetail() {
       const [profile, sellerRes, reactionRes, savedRes, followRes, questionRes, offerRes, dealRes, reviewRes, myReviewRes] =
         await Promise.all([
           loadMyProfile(user.id),
-          api.entities.BuilderProfile.filter({ user_id: found.seller_id }, { limit: 1 }),
-          api.entities.Reaction.filter({ listing_id: found.id }, { limit: 500 }),
-          api.entities.SavedListing.filter({ user_id: user.id, listing_id: found.id }, { limit: 1 }),
-          api.entities.Follow.filter({ follower_id: user.id, following_id: found.seller_id }, { limit: 1 }),
-          api.entities.Question.filter({ listing_id: found.id }, { sort: '-created_date', limit: 50 }),
-          api.entities.Offer.filter(
+          base44.entities.BuilderProfile.filter({ user_id: found.seller_id }, { limit: 1 }),
+          base44.entities.Reaction.filter({ listing_id: found.id }, { limit: 500 }),
+          base44.entities.SavedListing.filter({ user_id: user.id, listing_id: found.id }, { limit: 1 }),
+          base44.entities.Follow.filter({ follower_id: user.id, following_id: found.seller_id }, { limit: 1 }),
+          base44.entities.Question.filter({ listing_id: found.id }, { sort: '-created_date', limit: 50 }),
+          base44.entities.Offer.filter(
             iAmSeller ? { listing_id: found.id } : { listing_id: found.id, buyer_id: user.id },
             { sort: '-created_date', limit: 50 }
           ),
-          api.entities.Deal.filter({
+          base44.entities.Deal.filter({
             listing_id: found.id,
             $or: [{ buyer_id: user.id }, { seller_id: user.id }],
           }),
-          api.entities.Review.filter({ reviewee_id: found.seller_id }, { sort: '-created_date', limit: 20 }),
-          api.entities.Review.filter({ listing_id: found.id, reviewer_id: user.id }, { limit: 1 }),
+          base44.entities.Review.filter({ reviewee_id: found.seller_id }, { sort: '-created_date', limit: 20 }),
+          base44.entities.Review.filter({ listing_id: found.id, reviewer_id: user.id }, { limit: 1 }),
         ]);
       if (!active) return;
 
@@ -98,7 +98,7 @@ export default function ListingDetail() {
       setLoading(false);
 
       if (found.scan_id) {
-        api.entities.ProjectScan.get(found.scan_id)
+        base44.entities.ProjectScan.get(found.scan_id)
           .then((s) => {
             // only trust a scan the server attached for this seller
             if (active && s && s.owner_id === found.seller_id && (s.published || iAmSeller)) setScan(s);
@@ -106,7 +106,7 @@ export default function ListingDetail() {
           .catch(() => {});
       }
 
-      api.functions.invoke('listing-sync', { action: 'view', listing_id: found.id }).catch(() => {});
+      base44.functions.invoke('listing-sync', { action: 'view', listing_id: found.id }).catch(() => {});
       sellerLicence(found.seller_id).then((lic) => active && lic && setSellerLic(lic));
     })();
     return () => {
@@ -139,11 +139,11 @@ export default function ListingDetail() {
   const toggleSave = async () => {
     setBusy(true);
     if (savedRecord) {
-      await api.entities.SavedListing.delete(savedRecord.id);
+      await base44.entities.SavedListing.delete(savedRecord.id);
       setSavedRecord(null);
       toast({ title: 'Removed from saved' });
     } else {
-      const created = await api.entities.SavedListing.create({ user_id: user.id, listing_id: listing.id });
+      const created = await base44.entities.SavedListing.create({ user_id: user.id, listing_id: listing.id });
       setSavedRecord(created);
       toast({ title: 'Saved for later' });
     }
@@ -153,10 +153,10 @@ export default function ListingDetail() {
   const toggleFollow = async () => {
     setBusy(true);
     if (followRecord) {
-      await api.entities.Follow.delete(followRecord.id);
+      await base44.entities.Follow.delete(followRecord.id);
       setFollowRecord(null);
     } else {
-      const created = await api.entities.Follow.create({ follower_id: user.id, following_id: listing.seller_id });
+      const created = await base44.entities.Follow.create({ follower_id: user.id, following_id: listing.seller_id });
       setFollowRecord(created);
       pushNotification({
         user_id: listing.seller_id,
@@ -179,13 +179,13 @@ export default function ListingDetail() {
     let next = reactions;
     const mine = reactions.find((reaction) => reaction.user_id === user.id);
     if (mine) {
-      await api.entities.Reaction.delete(mine.id);
+      await base44.entities.Reaction.delete(mine.id);
       next = reactions.filter((reaction) => reaction.id !== mine.id);
     }
     if (mine?.type === type) {
       setReactions(next);
     } else {
-      const created = await api.entities.Reaction.create({
+      const created = await base44.entities.Reaction.create({
         listing_id: listing.id,
         user_id: user.id,
         user_name: myName,
@@ -223,7 +223,7 @@ export default function ListingDetail() {
 
   const respondToOffer = async (offer, status) => {
     setBusy(true);
-    await api.entities.Offer.update(offer.id, { status });
+    await base44.entities.Offer.update(offer.id, { status });
     setOffers(offers.map((item) => (item.id === offer.id ? { ...item, status } : item)));
     const target = iAmSeller ? offer.buyer_id : listing.seller_id;
     pushNotification({
@@ -248,7 +248,7 @@ export default function ListingDetail() {
     // The server checks who may accept, that the amount hasn't changed, and the seller licence.
     let deal;
     try {
-      const res = await api.functions.invoke('deal-room', {
+      const res = await base44.functions.invoke('deal-room', {
         action: 'accept_offer',
         offer_id: offer.id,
         expected_amount: offer.amount,
@@ -278,7 +278,7 @@ export default function ListingDetail() {
   const updateListingStatus = async (status) => {
     setBusy(true);
     try {
-      const res = await api.functions.invoke('listing-sync', { action: 'set_status', listing_id: listing.id, status });
+      const res = await base44.functions.invoke('listing-sync', { action: 'set_status', listing_id: listing.id, status });
       setListing({ ...listing, ...(res?.data?.listing || { status }) });
       toast({ title: status === 'archived' ? 'Listing archived' : status === 'active' ? 'Back on the market' : 'Listing marked sold' });
     } catch (err) {

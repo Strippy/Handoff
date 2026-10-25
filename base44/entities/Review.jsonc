@@ -1,0 +1,67 @@
+{
+  "description": "Created only by the deal-room function, for completed deals.",
+  "name": "Review",
+  "properties": {
+    "body": {
+      "type": "string"
+    },
+    "deal_id": {
+      "type": "string"
+    },
+    "listing_id": {
+      "type": "string"
+    },
+    "listing_title": {
+      "type": "string"
+    },
+    "rating": {
+      "type": "number"
+    },
+    "reviewee_id": {
+      "type": "string"
+    },
+    "reviewer_avatar": {
+      "type": "string"
+    },
+    "reviewer_id": {
+      "type": "string"
+    },
+    "reviewer_name": {
+      "type": "string"
+    },
+    "reviewer_role": {
+      "enum": [
+        "buyer",
+        "seller"
+      ],
+      "type": "string"
+    }
+  },
+  "required": [
+    "deal_id",
+    "reviewer_id",
+    "reviewee_id"
+  ],
+  "rls": {
+    "create": false,
+    "delete": {
+      "$or": [
+        {
+          "data.reviewer_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": true,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  },
+  "type": "object"
+}

@@ -1,7 +1,6 @@
 #env
 .env
 .env.*
-!.env.example
 
 # Logs
 /logs
@@ -36,6 +35,5 @@ dist-ssr
 .env
 .vite
 
-# Vercel / Supabase CLI local state
-.vercel
-supabase/.temp
+# Local link to a Base44 app, written by `base44 link`
+base44/.app.jsonc

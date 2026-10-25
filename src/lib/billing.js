@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { api } from '@/api/client';
+import { base44 } from '@/api/base44Client';
 
 // All billing goes through the `billing` backend function. Stripe keys and
 // subscription records never reach the browser.
 const call = async (action, payload = {}) => {
-  const res = await api.functions.invoke('billing', { action, ...payload });
+  const res = await base44.functions.invoke('billing', { action, ...payload });
   return res?.data || {};
 };
 

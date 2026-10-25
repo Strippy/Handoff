@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { api } from '@/api/client';
+import { base44 } from '@/api/base44Client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,7 +18,7 @@ export default function QuestionThread({ listing, questions = [], user, profile,
     const body = draft.trim();
     if (!body) return;
     setSending(true);
-    const created = await api.entities.Question.create({
+    const created = await base44.entities.Question.create({
       listing_id: listing.id,
       seller_id: listing.seller_id || '',
       author_id: user.id,
@@ -52,7 +52,7 @@ export default function QuestionThread({ listing, questions = [], user, profile,
       ...(question.answers || []),
       { author_id: user.id, author_name: myName, body, date: new Date().toISOString() },
     ];
-    await api.entities.Question.update(question.id, { answers });
+    await base44.entities.Question.update(question.id, { answers });
     if (question.author_id && question.author_id !== user.id) {
       pushNotification({
         user_id: question.author_id,

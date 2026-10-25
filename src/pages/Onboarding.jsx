@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '@/api/client';
+import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { loadMyProfile } from '@/lib/marketplace';
 import BuilderCode from '@/components/BuilderCode';
@@ -32,7 +32,7 @@ export default function Onboarding() {
 
   const acceptCode = async () => {
     if (profile?.id) {
-      const updated = await api.entities.BuilderProfile.update(profile.id, { builders_code_accepted: true });
+      const updated = await base44.entities.BuilderProfile.update(profile.id, { builders_code_accepted: true });
       setProfile(updated);
     }
     setAccepted(true);

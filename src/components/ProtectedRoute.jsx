@@ -1,5 +1,7 @@
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Outlet } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
+import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 const DefaultFallback = () => (
   <div className="fixed inset-0 flex items-center justify-center">
@@ -7,16 +9,28 @@ const DefaultFallback = () => (
   </div>
 );
 
-export default function ProtectedRoute({ fallback = <DefaultFallback /> }) {
-  const { isAuthenticated, isLoadingAuth, authChecked } = useAuth();
-  const location = useLocation();
+export default function ProtectedRoute({ fallback = <DefaultFallback />, unauthenticatedElement }) {
+  const { isAuthenticated, isLoadingAuth, authChecked, authError, checkUserAuth } = useAuth();
 
-  if (isLoadingAuth || !authChecked) return fallback;
+  useEffect(() => {
+    if (!authChecked && !isLoadingAuth) {
+      checkUserAuth();
+    }
+  }, [authChecked, isLoadingAuth, checkUserAuth]);
+
+  if (isLoadingAuth || !authChecked) {
+    return fallback;
+  }
+
+  if (authError) {
+    if (authError.type === 'user_not_registered') {
+      return <UserNotRegisteredError />;
+    }
+    return unauthenticatedElement;
+  }
 
   if (!isAuthenticated) {
-    const here = location.pathname + location.search;
-    const target = here && here !== '/' ? `/login?returnTo=${encodeURIComponent(here)}` : '/login';
-    return <Navigate to={target} replace />;
+    return unauthenticatedElement;
   }
 
   return <Outlet />;
